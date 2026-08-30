@@ -42,10 +42,6 @@
   border: 0;
 }
 
-button.breadcrumbs-crumb {
-  cursor: pointer;
-}
-
 button.breadcrumbs-crumb:hover {
   color: var(--text-color-highlight);
 }
