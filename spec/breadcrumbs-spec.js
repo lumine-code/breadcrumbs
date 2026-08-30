@@ -85,6 +85,18 @@ describe("breadcrumbs", () => {
     expect(secondPane.getElement().querySelector(":scope > .breadcrumbs")).not.toBeNull();
   });
 
+  it("does not attach a bar to an empty pane", () => {
+    const emptyPane = pane.splitRight();
+    expect(main.controller.views.has(emptyPane)).toBe(true);
+    expect(emptyPane.getElement().querySelector(":scope > .breadcrumbs")).toBeNull();
+  });
+
+  it("detaches the bar after the last pane item is closed", async () => {
+    await pane.destroyItem(editor);
+    expect(view.editor).toBeNull();
+    expect(pane.getElement().querySelector(":scope > .breadcrumbs")).toBeNull();
+  });
+
   it("shows the containing symbol path and jumps to a clicked symbol", async () => {
     const registry = makeRegistry();
     registryDisposable = main.consumeSymbolRegistry(registry);
