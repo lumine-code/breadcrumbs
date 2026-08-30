@@ -49,4 +49,11 @@ describe("breadcrumbs symbol path", () => {
     ]);
     expect(SymbolPath.forPosition(tree, new Point(0, 0))).toEqual([]);
   });
+
+  it("keeps a completed range current until the next symbol begins", () => {
+    const tree = [symbol("doc", [2, 0], [2, 3]), symbol("next", [8, 0], [8, 4])];
+    expect(SymbolPath.forPosition(tree, new Point(0, 0))).toEqual([]);
+    expect(SymbolPath.forPosition(tree, new Point(5, 0)).map(({ name }) => name)).toEqual(["doc"]);
+    expect(SymbolPath.forPosition(tree, new Point(9, 0)).map(({ name }) => name)).toEqual(["next"]);
+  });
 });
