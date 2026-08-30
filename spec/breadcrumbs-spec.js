@@ -149,6 +149,26 @@ describe("breadcrumbs", () => {
     expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
   });
 
+  it("loads symbols after the active editor is closed and another is opened", async () => {
+    registryDisposable = main.consumeSymbolRegistry(makeRegistry());
+    editor.setCursorBufferPosition([3, 0]);
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol"), {
+      description: "the first editor symbol to render",
+    });
+
+    await pane.destroyItem(editor);
+    editor = await lumine.workspace.open();
+    editor.setText(Array(10).fill("// line").join("\n"));
+    editor.setCursorBufferPosition([3, 0]);
+    pane = lumine.workspace.getCenter().getActivePane();
+    view = main.controller.views.get(pane);
+
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol"), {
+      description: "the reopened editor symbol to render",
+    });
+    expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
+  });
+
   it("reveals project path segments through tree-view.selection", async () => {
     tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "breadcrumbs-"));
     const source = path.join(tempRoot, "src");
