@@ -15,7 +15,6 @@ function makeRegistry() {
         children: [
           {
             name: "inner",
-            tag: "method",
             position: new Point(2, 2),
             range: new Range([2, 0], [5, 0]),
             children: [],
@@ -39,7 +38,16 @@ function makeRegistry() {
 }
 
 describe("breadcrumbs", () => {
-  let pack, main, editor, pane, view, registryDisposable, treeDisposable, projectPaths, tempRoot;
+  let pack,
+    main,
+    editor,
+    pane,
+    view,
+    registryDisposable,
+    treeDisposable,
+    iconRegistration,
+    projectPaths,
+    tempRoot;
 
   beforeEach(async () => {
     jasmine.useRealClock();
@@ -60,6 +68,7 @@ describe("breadcrumbs", () => {
   afterEach(async () => {
     registryDisposable?.dispose();
     treeDisposable?.dispose();
+    iconRegistration?.dispose();
     lumine.project.setPaths(projectPaths);
     editor?.destroy();
     await lumine.packages.deactivatePackage("breadcrumbs");
@@ -86,10 +95,40 @@ describe("breadcrumbs", () => {
     });
     const symbols = view.element.querySelectorAll(".breadcrumbs-symbol");
     expect(Array.from(symbols, (element) => element.textContent)).toEqual(["Outer", "inner"]);
+    expect(symbols[0].querySelector(".breadcrumbs-icon").classList).toContain("icon-puzzle");
+    expect(symbols[1].querySelector(".breadcrumbs-icon").classList).toContain("icon-code");
 
     symbols[0].click();
     expect(editor.getCursorBufferPosition().isEqual([0, 0])).toBe(true);
     expect(lumine.views.getView(editor).contains(document.activeElement)).toBe(true);
+  });
+
+  it("uses and live-updates the shared kind icon registry", async () => {
+    registryDisposable = main.consumeSymbolRegistry(makeRegistry());
+    editor.setCursorBufferPosition([3, 0]);
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol .icon-puzzle"), {
+      description: "the core class icon to render",
+    });
+
+    iconRegistration = lumine.icons.addProvider(
+      {
+        id: "breadcrumbs-spec",
+        handles: ["kind"],
+        iconFor(target) {
+          return target.context === "breadcrumbs" && target.kind === "class" ? "icon-flame" : null;
+        },
+      },
+      { priority: 100 },
+    );
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol .icon-flame"), {
+      description: "the package-supplied class icon to repaint",
+    });
+
+    iconRegistration.dispose();
+    iconRegistration = null;
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol .icon-puzzle"), {
+      description: "the core class icon to return",
+    });
   });
 
   it("reveals project path segments through tree-view.selection", async () => {
