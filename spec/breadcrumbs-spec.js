@@ -95,6 +95,7 @@ describe("breadcrumbs", () => {
     });
     const symbols = view.element.querySelectorAll(".breadcrumbs-symbol");
     expect(Array.from(symbols, (element) => element.textContent)).toEqual(["Outer", "inner"]);
+    expect(lumine.tooltips.findTooltips(symbols[0])[0].getTitle()).toBe("Outer (class)");
     expect(symbols[0].querySelector(".breadcrumbs-icon").classList).toContain("icon-puzzle");
     expect(symbols[1].querySelector(".breadcrumbs-icon").classList).toContain("icon-code");
 
@@ -167,6 +168,9 @@ describe("breadcrumbs", () => {
       "src",
       "sample.js",
     ]);
+    expect(lumine.tooltips.findTooltips(paths[1])[0].getTitle()).toBe(
+      `Reveal ${source} in the tree view`,
+    );
 
     paths[1].click();
     expect(treeView.revealPath).toHaveBeenCalledWith(source, { show: true });
