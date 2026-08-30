@@ -131,6 +131,23 @@ describe("breadcrumbs", () => {
     });
   });
 
+  it("recovers when a provider becomes ready after the editor was restored", async () => {
+    const registry = makeRegistry();
+    const restoredTree = registry.tree;
+    registry.tree = null;
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    await Promise.resolve();
+    expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
+
+    editor.setCursorBufferPosition([3, 0]);
+    registry.tree = restoredTree;
+    registry.invalidate(editor);
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol"), {
+      description: "symbols to appear without reopening the restored editor",
+    });
+    expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
+  });
+
   it("reveals project path segments through tree-view.selection", async () => {
     tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "breadcrumbs-"));
     const source = path.join(tempRoot, "src");
