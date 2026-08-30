@@ -69,6 +69,22 @@
       "description": "Show file, folder, and symbol icons in breadcrumbs.",
       "type": "boolean",
       "default": true
+    },
+    "scrollZone": {
+      "title": "Scroll zone",
+      "description": "Where the cursor lands after clicking a symbol, as a % of viewport height. One value e.g. `25` always scrolls it there. Two are a band it may sit in untouched: `0, 50` moves it to the edge it crossed, `50, 0` throws it to the opposite edge for maximum room ahead. 0 = top margin, 100 = bottom margin.",
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100
+      },
+      "minItems": 1,
+      "maxItems": 2,
+      "default": [
+        0,
+        50
+      ]
     }
   },
   "consumedServices": {

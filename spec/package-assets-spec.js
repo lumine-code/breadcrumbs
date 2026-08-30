@@ -25,6 +25,15 @@ describe("breadcrumbs package assets", () => {
     );
   });
 
+  it("defines the symbol navigation scroll zone", () => {
+    const config = JSON.parse(read("package.json")).configSchema.scrollZone;
+    expect(config.type).toBe("array");
+    expect(config.items).toEqual({ type: "integer", minimum: 0, maximum: 100 });
+    expect(config.minItems).toBe(1);
+    expect(config.maxItems).toBe(2);
+    expect(config.default).toEqual([0, 50]);
+  });
+
   it("ships one menu file, one stylesheet, and no keymap", () => {
     const menu = JSON.parse(read("menus/main.json"));
     expect(menu.menu[0].label).toBe("View");

@@ -58,6 +58,7 @@ describe("breadcrumbs", () => {
     lumine.config.set("breadcrumbs.filePath", "on");
     lumine.config.set("breadcrumbs.symbolPath", "on");
     lumine.config.set("breadcrumbs.icons", true);
+    lumine.config.set("breadcrumbs.scrollZone", [0, 50]);
     pack = await lumine.packages.activatePackage("breadcrumbs");
     main = pack.mainModule;
     editor = await lumine.workspace.open();
@@ -112,8 +113,11 @@ describe("breadcrumbs", () => {
     expect(symbols[0].querySelector(".breadcrumbs-icon").classList).toContain("icon-puzzle");
     expect(symbols[1].querySelector(".breadcrumbs-icon").classList).toContain("icon-code");
 
+    lumine.config.set("breadcrumbs.scrollZone", [25]);
+    const scrollToCursor = spyOn(editor, "scrollToCursorPosition").and.callThrough();
     symbols[0].click();
     expect(editor.getCursorBufferPosition().isEqual([0, 0])).toBe(true);
+    expect(scrollToCursor).toHaveBeenCalledWith({ zone: [25] });
     expect(lumine.views.getView(editor).contains(document.activeElement)).toBe(true);
   });
 
