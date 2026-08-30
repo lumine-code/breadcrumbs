@@ -39,18 +39,23 @@
   line-height: 20px;
   background: transparent;
   border: 0;
-  border-radius: var(--component-border-radius);
 }
 
 button.breadcrumbs-crumb {
   cursor: pointer;
 }
 
-button.breadcrumbs-crumb:hover,
-button.breadcrumbs-crumb:focus {
+button.breadcrumbs-crumb:hover {
   color: var(--text-color-highlight);
-  background: var(--background-color-highlight);
+}
+
+button.breadcrumbs-crumb:focus {
   outline: none;
+}
+
+button.breadcrumbs-crumb:focus-visible {
+  color: var(--text-color-highlight);
+  box-shadow: inset 0 -1px 0 var(--accent-color);
 }
 
 .breadcrumbs-icon {

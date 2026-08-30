@@ -35,5 +35,6 @@ describe("breadcrumbs package assets", () => {
       "background-color: var(--tab-background-color-active)",
     );
     expect(read("styles/main.css")).toContain("align-items: center");
+    expect(read("styles/main.css")).not.toContain("background: var(--background-color-highlight)");
   });
 });
