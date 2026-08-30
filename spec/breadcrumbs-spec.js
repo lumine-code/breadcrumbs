@@ -2,6 +2,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { Emitter, Point, Range } = require("lumine");
+const PathSegments = require("../lib/path-segments");
 
 function makeRegistry() {
   const emitter = new Emitter();
@@ -116,6 +117,67 @@ describe("breadcrumbs", () => {
     expect(lumine.views.getView(editor).contains(document.activeElement)).toBe(true);
   });
 
+  it("does no DOM, icon, tooltip, or scroll work while the active symbol is unchanged", async () => {
+    registryDisposable = main.consumeSymbolRegistry(makeRegistry());
+    editor.setCursorBufferPosition([3, 0]);
+    await waitForFrames(() => view.element.querySelectorAll(".breadcrumbs-symbol").length === 2, {
+      description: "the initial symbol path to render",
+    });
+
+    const pathCrumb = view.element.querySelector(".breadcrumbs-path");
+    const symbolCrumbs = Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"));
+    symbolCrumbs[1].focus();
+    const focusedCrumb = document.activeElement;
+    const fileReplacement = spyOn(view.fileContent, "replaceChildren").and.callThrough();
+    const symbolReplacement = spyOn(view.symbolContent, "replaceChildren").and.callThrough();
+    const iconApplication = spyOn(lumine.icons, "applyTo").and.callThrough();
+    const tooltipCreation = spyOn(lumine.tooltips, "add").and.callThrough();
+    const pathCalculation = spyOn(PathSegments, "forEditor").and.callThrough();
+    const scrollScheduling = spyOn(view, "scheduleScrollToEnd").and.callThrough();
+
+    for (let index = 0; index < 1000; index++) {
+      editor.setCursorBufferPosition([3 + (index % 2), 0]);
+    }
+
+    expect(fileReplacement).not.toHaveBeenCalled();
+    expect(symbolReplacement).not.toHaveBeenCalled();
+    expect(iconApplication).not.toHaveBeenCalled();
+    expect(tooltipCreation).not.toHaveBeenCalled();
+    expect(pathCalculation).not.toHaveBeenCalled();
+    expect(scrollScheduling).not.toHaveBeenCalled();
+    expect(view.element.querySelector(".breadcrumbs-path")).toBe(pathCrumb);
+    expect(Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"))).toEqual(symbolCrumbs);
+    expect(document.activeElement).toBe(focusedCrumb);
+  });
+
+  it("does not fetch or react to cursors while symbols or breadcrumbs are off", async () => {
+    const registry = makeRegistry();
+    spyOn(registry, "getFileSymbolTree").and.callThrough();
+    lumine.config.set("breadcrumbs.symbolPath", "off");
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    await Promise.resolve();
+
+    const render = spyOn(view, "render").and.callThrough();
+    editor.setCursorBufferPosition([1, 0]);
+    editor.setCursorBufferPosition([2, 0]);
+    expect(registry.getFileSymbolTree).not.toHaveBeenCalled();
+    expect(render).not.toHaveBeenCalled();
+
+    lumine.config.set("breadcrumbs.symbolPath", "on");
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol"), {
+      description: "symbols to load after enabling their path",
+    });
+    expect(registry.getFileSymbolTree).toHaveBeenCalledTimes(1);
+
+    lumine.config.set("breadcrumbs.enabled", false);
+    registry.getFileSymbolTree.calls.reset();
+    render.calls.reset();
+    editor.setCursorBufferPosition([3, 0]);
+    editor.setCursorBufferPosition([4, 0]);
+    expect(registry.getFileSymbolTree).not.toHaveBeenCalled();
+    expect(render).not.toHaveBeenCalled();
+  });
+
   it("uses and live-updates the shared kind icon registry", async () => {
     registryDisposable = main.consumeSymbolRegistry(makeRegistry());
     editor.setCursorBufferPosition([3, 0]);
@@ -197,6 +259,27 @@ describe("breadcrumbs", () => {
     expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
   });
 
+  it("limits cursor retries after repeated null symbol results", async () => {
+    const registry = makeRegistry();
+    registry.peekFileSymbolTree = () => null;
+    spyOn(registry, "getFileSymbolTree").and.resolveTo(null);
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    await view.symbolRefresh.promise;
+    expect(registry.getFileSymbolTree).toHaveBeenCalledTimes(1);
+
+    editor.setCursorBufferPosition([1, 0]);
+    await view.symbolRefresh.promise;
+    expect(registry.getFileSymbolTree).toHaveBeenCalledTimes(2);
+
+    for (let row = 2; row < 9; row++) editor.setCursorBufferPosition([row, 0]);
+    await Promise.resolve();
+    expect(registry.getFileSymbolTree).toHaveBeenCalledTimes(2);
+
+    registry.invalidate(editor);
+    await view.symbolRefresh.promise;
+    expect(registry.getFileSymbolTree).toHaveBeenCalledTimes(3);
+  });
+
   it("loads symbols after the active editor is closed and another is opened", async () => {
     registryDisposable = main.consumeSymbolRegistry(makeRegistry());
     editor.setCursorBufferPosition([3, 0]);
@@ -242,6 +325,46 @@ describe("breadcrumbs", () => {
 
     paths[1].click();
     expect(treeView.revealPath).toHaveBeenCalledWith(source, { show: true });
+  });
+
+  it("updates only file crumbs when project roots change", async () => {
+    tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "breadcrumbs-"));
+    const source = path.join(tempRoot, "src");
+    fs.mkdirSync(source);
+    lumine.project.setPaths([]);
+    await editor.saveAs(path.join(source, "sample.js"));
+    registryDisposable = main.consumeSymbolRegistry(makeRegistry());
+    editor.setCursorBufferPosition([3, 0]);
+    await waitForFrames(() => view.element.querySelectorAll(".breadcrumbs-symbol").length === 2, {
+      description: "symbols for the external file to render",
+    });
+
+    const symbolCrumbs = Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"));
+    const previousPathCrumbs = Array.from(view.element.querySelectorAll(".breadcrumbs-path"));
+    lumine.project.setPaths([tempRoot]);
+
+    const pathCrumbs = Array.from(view.element.querySelectorAll(".breadcrumbs-path"));
+    expect(pathCrumbs.map((item) => item.textContent)).toEqual([
+      path.basename(tempRoot),
+      "src",
+      "sample.js",
+    ]);
+    expect(pathCrumbs[0]).not.toBe(previousPathCrumbs[0]);
+    expect(Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"))).toEqual(symbolCrumbs);
+  });
+
+  it("reports synchronous non-Error failures from tree reveal", async () => {
+    spyOn(console, "warn");
+    treeDisposable = main.consumeTreeViewSelection({
+      revealPath() {
+        throw "not available";
+      },
+    });
+
+    await view.revealPath("missing.js");
+    expect(console.warn).toHaveBeenCalledWith(
+      "breadcrumbs: could not reveal missing.js: not available",
+    );
   });
 
   it("honors last/off settings and the toggle command", async () => {

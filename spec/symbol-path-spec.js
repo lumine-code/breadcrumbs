@@ -56,4 +56,62 @@ describe("breadcrumbs symbol path", () => {
     expect(SymbolPath.forPosition(tree, new Point(5, 0)).map(({ name }) => name)).toEqual(["doc"]);
     expect(SymbolPath.forPosition(tree, new Point(9, 0)).map(({ name }) => name)).toEqual(["next"]);
   });
+
+  it("checks a deeply nested containing hierarchy only once per level", () => {
+    let rangeChecks = 0;
+    let children = [];
+    for (let depth = 999; depth >= 0; depth--) {
+      children = [
+        {
+          name: `level-${depth}`,
+          position: new Point(depth, 0),
+          range: {
+            isEmpty: () => false,
+            containsPoint: () => {
+              rangeChecks++;
+              return true;
+            },
+          },
+          children,
+        },
+      ];
+    }
+
+    expect(SymbolPath.forPosition(children, new Point(999, 0)).length).toBe(1000);
+    expect(rangeChecks).toBe(1000);
+  });
+
+  it("reuses full and last paths for the same active symbol", () => {
+    const tree = [symbol("outer", [0, 0], [10, 0], [symbol("inner", [2, 0], [8, 0])])];
+    const position = new Point(4, 0);
+
+    expect(SymbolPath.forPosition(tree, position)).toBe(SymbolPath.forPosition(tree, position));
+    expect(SymbolPath.lastForPosition(tree, position)).toBe(
+      SymbolPath.lastForPosition(tree, position),
+    );
+  });
+
+  it("skips containment walks for point-only trees", () => {
+    let rangeChecks = 0;
+    const tree = Array.from({ length: 2048 }, (_, row) => ({
+      name: `point-${row}`,
+      position: new Point(row, 0),
+      range: {
+        isEmpty() {
+          rangeChecks++;
+          return true;
+        },
+      },
+      children: [],
+    }));
+
+    SymbolPath.forPosition(tree, new Point(1024, 0));
+    const indexingChecks = rangeChecks;
+    for (let index = 0; index < 100; index++) {
+      SymbolPath.forPosition(tree, new Point(1024 + (index % 2), 0));
+    }
+
+    expect(indexingChecks).toBe(tree.length);
+    expect(rangeChecks).toBe(indexingChecks);
+  });
 });

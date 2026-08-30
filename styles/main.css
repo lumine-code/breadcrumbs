@@ -28,6 +28,11 @@
   white-space: nowrap;
 }
 
+.breadcrumbs-files,
+.breadcrumbs-symbols {
+  display: contents;
+}
+
 .breadcrumbs-crumb {
   display: inline-flex;
   align-items: center;
