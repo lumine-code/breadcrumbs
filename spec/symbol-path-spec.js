@@ -27,6 +27,10 @@ describe("breadcrumbs symbol path", () => {
     expect(SymbolPath.forPosition(tree, new Point(15, 0)).map(({ name }) => name)).toEqual([
       "Outer",
     ]);
+    const delayed = [symbol("Later", [2, 0], [4, 0])];
+    expect(SymbolPath.forPosition(delayed, new Point(0, 0)).map(({ name }) => name)).toEqual([
+      "Later",
+    ]);
   });
 
   it("falls back to the nearest preceding point symbol", () => {
@@ -44,6 +48,9 @@ describe("breadcrumbs symbol path", () => {
     ]);
     expect(SymbolPath.forPosition(tree, new Point(9, 0)).map(({ name }) => name)).toEqual([
       "second",
+    ]);
+    expect(SymbolPath.forPosition(tree, new Point(0, 0)).map(({ name }) => name)).toEqual([
+      "first",
     ]);
   });
 });

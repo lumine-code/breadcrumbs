@@ -149,6 +149,24 @@ describe("breadcrumbs", () => {
     expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
   });
 
+  it("adopts a tree another consumer cached after the initial request", async () => {
+    const registry = makeRegistry();
+    const cachedTree = registry.tree;
+    registry.tree = null;
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    await Promise.resolve();
+    expect(view.symbolTree).toBeNull();
+
+    // Simulate Outline warming the shared registry without another
+    // invalidation after breadcrumbs' transient null result.
+    registry.tree = cachedTree;
+    editor.setCursorBufferPosition([3, 0]);
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol"), {
+      description: "breadcrumbs to adopt the shared cached tree on cursor movement",
+    });
+    expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
+  });
+
   it("loads symbols after the active editor is closed and another is opened", async () => {
     registryDisposable = main.consumeSymbolRegistry(makeRegistry());
     editor.setCursorBufferPosition([3, 0]);
@@ -165,6 +183,19 @@ describe("breadcrumbs", () => {
 
     await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol"), {
       description: "the reopened editor symbol to render",
+    });
+    expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
+  });
+
+  it("shows the first outline symbol at a freshly opened editor position", async () => {
+    const registry = makeRegistry();
+    registry.tree[0].position = new Point(2, 0);
+    registry.tree[0].range = new Range([2, 0], [8, 0]);
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([0, 0]);
+
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol"), {
+      description: "the first outline symbol to represent the start of the document",
     });
     expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
   });
