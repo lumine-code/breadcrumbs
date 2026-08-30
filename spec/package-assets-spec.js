@@ -36,5 +36,6 @@ describe("breadcrumbs package assets", () => {
     );
     expect(read("styles/main.css")).toContain("align-items: center");
     expect(read("styles/main.css")).not.toContain("background: var(--background-color-highlight)");
+    expect(read("styles/main.css")).toContain("cursor: default");
   });
 });

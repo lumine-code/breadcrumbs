@@ -37,6 +37,7 @@
   color: inherit;
   font: inherit;
   line-height: 20px;
+  cursor: default;
   background: transparent;
   border: 0;
 }
