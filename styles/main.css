@@ -64,9 +64,14 @@ button.breadcrumbs-crumb:focus {
 }
 
 .breadcrumbs-separator {
+  display: inline-flex;
   flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
   width: 12px;
+  height: 20px;
   margin: 0 4px;
+  line-height: 20px;
   color: var(--text-color-subtle);
   text-align: center;
 }
