@@ -179,6 +179,24 @@ describe("breadcrumbs", () => {
     expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
   });
 
+  it("retries a transient null symbol request when the cursor moves", async () => {
+    const registry = makeRegistry();
+    const availableTree = registry.tree;
+    let providerReady = false;
+    registry.peekFileSymbolTree = () => null;
+    registry.getFileSymbolTree = async () => (providerReady ? availableTree : null);
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    await Promise.resolve();
+    expect(view.symbolTree).toBeNull();
+
+    providerReady = true;
+    editor.setCursorBufferPosition([3, 0]);
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol"), {
+      description: "cursor movement to retry the transient symbol request",
+    });
+    expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
+  });
+
   it("loads symbols after the active editor is closed and another is opened", async () => {
     registryDisposable = main.consumeSymbolRegistry(makeRegistry());
     editor.setCursorBufferPosition([3, 0]);
