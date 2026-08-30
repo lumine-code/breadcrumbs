@@ -1,0 +1,72 @@
+.breadcrumbs {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  min-height: 24px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  color: var(--text-color-subtle);
+  background-color: var(--tab-background-color-active);
+  border-bottom: 1px solid var(--base-border-color);
+  scrollbar-width: none;
+}
+
+.breadcrumbs[hidden] {
+  display: none;
+}
+
+.breadcrumbs::-webkit-scrollbar {
+  display: none;
+}
+
+.breadcrumbs-content {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  min-width: 100%;
+  height: 23px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.breadcrumbs-crumb {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  height: 20px;
+  padding: 0 3px;
+  color: inherit;
+  font: inherit;
+  line-height: 20px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--component-border-radius);
+}
+
+button.breadcrumbs-crumb {
+  cursor: pointer;
+}
+
+button.breadcrumbs-crumb:hover,
+button.breadcrumbs-crumb:focus {
+  color: var(--text-color-highlight);
+  background: var(--background-color-highlight);
+  outline: none;
+}
+
+.breadcrumbs-icon {
+  flex: 0 0 auto;
+  color: var(--icon-color, inherit);
+}
+
+.breadcrumbs-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breadcrumbs-separator {
+  flex: 0 0 auto;
+  width: 12px;
+  margin: 0 4px;
+  color: var(--text-color-subtle);
+  text-align: center;
+}

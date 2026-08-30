@@ -1,0 +1,94 @@
+{
+  "name": "breadcrumbs",
+  "author": "lumine-code",
+  "version": "1.0.0",
+  "description": "Show file and symbol paths above each editor.",
+  "keywords": [
+    "navigation",
+    "symbols",
+    "path",
+    "hierarchy",
+    "folders"
+  ],
+  "repository": "https://github.com/lumine-code/breadcrumbs",
+  "bugs": {
+    "url": "https://github.com/lumine-code/breadcrumbs/issues"
+  },
+  "license": "MIT",
+  "main": "./lib/main",
+  "files": [
+    "lib",
+    "menus",
+    "spec",
+    "styles"
+  ],
+  "engines": {
+    "lumine": "^1.0.0",
+    "node": ">=24"
+  },
+  "backgroundTips": [
+    "Breadcrumbs show the active file and symbol path above each editor."
+  ],
+  "scripts": {
+    "test": "lumine --test spec",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "configSchema": {
+    "enabled": {
+      "title": "Enabled",
+      "description": "Show breadcrumbs above text editors.",
+      "type": "boolean",
+      "default": true
+    },
+    "filePath": {
+      "title": "File Path",
+      "description": "Show the full file path, only the file name, or no file path.",
+      "type": "string",
+      "enum": [
+        "on",
+        "off",
+        "last"
+      ],
+      "default": "on"
+    },
+    "symbolPath": {
+      "title": "Symbol Path",
+      "description": "Show the full symbol path, only the innermost symbol, or no symbols.",
+      "type": "string",
+      "enum": [
+        "on",
+        "off",
+        "last"
+      ],
+      "default": "on"
+    },
+    "icons": {
+      "title": "Icons",
+      "description": "Show file, folder, and symbol icons in breadcrumbs.",
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "consumedServices": {
+    "symbol.registry": {
+      "versions": {
+        "^1.1.0": "consumeSymbolRegistry"
+      }
+    },
+    "tree-view.selection": {
+      "versions": {
+        "^1.0.0": "consumeTreeViewSelection"
+      }
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-n": "^18.3.0",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6"
+  }
+}
