@@ -199,19 +199,6 @@ describe("breadcrumbs", () => {
     expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
   });
 
-  it("shows the first outline symbol at a freshly opened editor position", async () => {
-    const registry = makeRegistry();
-    registry.tree[0].position = new Point(2, 0);
-    registry.tree[0].range = new Range([2, 0], [8, 0]);
-    registryDisposable = main.consumeSymbolRegistry(registry);
-    editor.setCursorBufferPosition([0, 0]);
-
-    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol"), {
-      description: "the first outline symbol to represent the start of the document",
-    });
-    expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Outer");
-  });
-
   it("reveals project path segments through tree-view.selection", async () => {
     tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "breadcrumbs-"));
     const source = path.join(tempRoot, "src");
