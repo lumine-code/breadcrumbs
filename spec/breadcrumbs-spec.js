@@ -109,9 +109,10 @@ describe("breadcrumbs", () => {
     });
     const symbols = view.element.querySelectorAll(".breadcrumbs-symbol");
     expect(Array.from(symbols, (element) => element.textContent)).toEqual(["Outer", "inner"]);
-    expect(lumine.tooltips.findTooltips(symbols[0])[0].getTitle()).toBe("Outer (class)");
     expect(symbols[0].querySelector(".breadcrumbs-icon").classList).toContain("icon-puzzle");
     expect(symbols[1].querySelector(".breadcrumbs-icon").classList).toContain("icon-code");
+    expect(view.element.querySelector("[title], [data-original-title]")).toBeNull();
+    expect(lumine.tooltips.findTooltips(symbols[0])).toEqual([]);
 
     lumine.config.set("breadcrumbs.scrollZone", [25]);
     const scrollToCursor = spyOn(editor, "scrollToCursorPosition").and.callThrough();
@@ -121,7 +122,7 @@ describe("breadcrumbs", () => {
     expect(lumine.views.getView(editor).contains(document.activeElement)).toBe(true);
   });
 
-  it("does no DOM, icon, tooltip, or scroll work while the active symbol is unchanged", async () => {
+  it("does no DOM, icon, or scroll work while the active symbol is unchanged", async () => {
     registryDisposable = main.consumeSymbolRegistry(makeRegistry());
     editor.setCursorBufferPosition([3, 0]);
     await waitForFrames(() => view.element.querySelectorAll(".breadcrumbs-symbol").length === 2, {
@@ -135,7 +136,6 @@ describe("breadcrumbs", () => {
     const fileReplacement = spyOn(view.fileContent, "replaceChildren").and.callThrough();
     const symbolReplacement = spyOn(view.symbolContent, "replaceChildren").and.callThrough();
     const iconApplication = spyOn(lumine.icons, "applyTo").and.callThrough();
-    const tooltipCreation = spyOn(lumine.tooltips, "add").and.callThrough();
     const pathCalculation = spyOn(PathSegments, "forEditor").and.callThrough();
     const scrollScheduling = spyOn(view, "scheduleScrollToEnd").and.callThrough();
 
@@ -146,7 +146,6 @@ describe("breadcrumbs", () => {
     expect(fileReplacement).not.toHaveBeenCalled();
     expect(symbolReplacement).not.toHaveBeenCalled();
     expect(iconApplication).not.toHaveBeenCalled();
-    expect(tooltipCreation).not.toHaveBeenCalled();
     expect(pathCalculation).not.toHaveBeenCalled();
     expect(scrollScheduling).not.toHaveBeenCalled();
     expect(view.element.querySelector(".breadcrumbs-path")).toBe(pathCrumb);
@@ -323,9 +322,9 @@ describe("breadcrumbs", () => {
       "src",
       "sample.js",
     ]);
-    expect(lumine.tooltips.findTooltips(paths[1])[0].getTitle()).toBe(
-      `Reveal ${source} in the tree view`,
-    );
+    expect(paths[1].hasAttribute("title")).toBe(false);
+    expect(paths[1].hasAttribute("data-original-title")).toBe(false);
+    expect(lumine.tooltips.findTooltips(paths[1])).toEqual([]);
 
     paths[1].click();
     expect(treeView.revealPath).toHaveBeenCalledWith(source, { show: true });
