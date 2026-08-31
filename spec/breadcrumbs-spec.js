@@ -499,6 +499,40 @@ describe("breadcrumbs", () => {
     ).toEqual([path.basename(tempRoot), "src", "sample.js"]);
   });
 
+  it("receives repository icons from the central path resolver", async () => {
+    tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "breadcrumbs-"));
+    const repositoryPath = path.join(tempRoot, "nested-repository");
+    fs.mkdirSync(repositoryPath);
+    lumine.project.setPaths([tempRoot]);
+
+    let repository = null;
+    spyOn(lumine.repositories, "getForPath").and.callFake((filePath) =>
+      filePath === repositoryPath ? repository : null,
+    );
+    await editor.saveAs(path.join(repositoryPath, "sample.js"));
+
+    let repositoryIcon = view.element.querySelector(".breadcrumbs-path .breadcrumbs-icon");
+    expect(repositoryIcon.classList).toContain("icon-file-directory");
+
+    repository = {
+      relativize: (filePath) => (filePath === repositoryPath ? "" : filePath),
+      isSubmodule: () => false,
+    };
+    lumine.repositories.emitter.emit("did-change", {
+      version: 1,
+      added: [repository],
+      removed: [],
+      updated: [],
+      rootsAdded: [],
+      rootsRemoved: [],
+      routingChangedPrefixes: [repositoryPath],
+    });
+
+    repositoryIcon = view.element.querySelector(".breadcrumbs-path .breadcrumbs-icon");
+    expect(repositoryIcon.classList).toContain("icon-repo");
+    expect(repositoryIcon.classList).not.toContain("icon-file-directory");
+  });
+
   it("updates only file crumbs when project roots change", async () => {
     tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "breadcrumbs-"));
     const source = path.join(tempRoot, "src");
