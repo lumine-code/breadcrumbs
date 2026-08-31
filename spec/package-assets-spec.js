@@ -9,7 +9,7 @@ describe("breadcrumbs package assets", () => {
     const pkg = JSON.parse(read("package.json"));
     const readme = read("README.md").split(/\r?\n/);
     expect(pkg.name).toBe("breadcrumbs");
-    expect(pkg.description).toBe("Show file and symbol paths above each editor.");
+    expect(pkg.description).toBe("Show file and symbol paths above each pane item.");
     expect(readme[0]).toBe("# breadcrumbs");
     expect(readme[2]).toBe(pkg.description);
     expect(pkg.keywords).toEqual(["navigation", "symbols", "path", "hierarchy", "folders"]);

@@ -4,6 +4,52 @@ const path = require("node:path");
 const { Emitter, Point, Range } = require("lumine");
 const PathSegments = require("../lib/path-segments");
 
+let paneItemId = 0;
+
+function makePaneItem(options = {}) {
+  const emitter = new Emitter();
+  const item = document.createElement("div");
+  const uri = `breadcrumbs-spec://${++paneItemId}`;
+  let title = options.title ?? "Pane Item";
+  let filePath = options.filePath;
+  let iconName = options.iconName;
+  let grammar = options.grammar;
+
+  item.getTitle = () => title;
+  item.getURI = () => uri;
+  item.onDidChangeTitle = (callback) => emitter.on("title", callback);
+  item.setTitle = (value) => {
+    title = value;
+    emitter.emit("title", value);
+  };
+
+  if (Object.hasOwn(options, "filePath")) {
+    item.getPath = () => filePath;
+    item.onDidChangePath = (callback) => emitter.on("path", callback);
+    item.setPath = (value) => {
+      filePath = value;
+      emitter.emit("path", value);
+    };
+  }
+  if (Object.hasOwn(options, "iconName")) {
+    item.getIconName = () => iconName;
+    item.onDidChangeIcon = (callback) => emitter.on("icon", callback);
+    item.setIconName = (value) => {
+      iconName = value;
+      emitter.emit("icon", value);
+    };
+  }
+  if (Object.hasOwn(options, "grammar")) {
+    item.getGrammar = () => grammar;
+    item.onDidChangeGrammar = (callback) => emitter.on("grammar", callback);
+    item.setGrammar = (value) => {
+      grammar = value;
+      emitter.emit("grammar", value);
+    };
+  }
+  return item;
+}
+
 function makeRegistry() {
   const emitter = new Emitter();
   return {
@@ -48,11 +94,13 @@ describe("breadcrumbs", () => {
     treeDisposable,
     iconRegistration,
     projectPaths,
-    tempRoot;
+    tempRoot,
+    paneItems;
 
   beforeEach(async () => {
     jasmine.useRealClock();
     jasmine.attachToDOM(lumine.views.getView(lumine.workspace));
+    paneItems = [];
     projectPaths = lumine.project.getPaths();
     lumine.config.set("breadcrumbs.enabled", true);
     lumine.config.set("breadcrumbs.filePath", "on");
@@ -72,6 +120,10 @@ describe("breadcrumbs", () => {
     registryDisposable?.dispose();
     treeDisposable?.dispose();
     iconRegistration?.dispose();
+    for (const item of paneItems) {
+      const owner = lumine.workspace.paneForItem?.(item);
+      if (owner) await owner.destroyItem(item);
+    }
     lumine.project.setPaths(projectPaths);
     editor?.destroy();
     await lumine.packages.deactivatePackage("breadcrumbs");
@@ -96,8 +148,85 @@ describe("breadcrumbs", () => {
 
   it("detaches the bar after the last pane item is closed", async () => {
     await pane.destroyItem(editor);
+    expect(view.item).toBeNull();
     expect(view.editor).toBeNull();
     expect(pane.getElement().querySelector(":scope > .breadcrumbs")).toBeNull();
+  });
+
+  it("shows and updates a title-only pane item without asking for symbols", () => {
+    const item = makePaneItem({ title: "Settings", iconName: "gear" });
+    paneItems.push(item);
+    pane.addItem(item);
+    pane.activateItem(item);
+
+    const registry = makeRegistry();
+    spyOn(registry, "getFileSymbolTree").and.callThrough();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+
+    expect(view.item).toBe(item);
+    expect(view.editor).toBeNull();
+    expect(view.element.hidden).toBe(false);
+    expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("Settings");
+    expect(view.element.querySelector(".breadcrumbs-icon").classList).toContain("icon-gear");
+    expect(registry.getFileSymbolTree).not.toHaveBeenCalled();
+
+    item.setTitle("Preferences");
+    item.setIconName("info");
+    expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("Preferences");
+    expect(view.element.querySelector(".breadcrumbs-icon").classList).toContain("icon-info");
+  });
+
+  it("switches between non-editor pane items and drops stale subscriptions", () => {
+    const first = makePaneItem({ title: "First" });
+    const second = makePaneItem({ title: "Second" });
+    paneItems.push(first, second);
+    pane.addItem(first);
+    pane.addItem(second);
+
+    pane.activateItem(first);
+    expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("First");
+    pane.activateItem(second);
+    first.setTitle("Stale");
+
+    expect(view.item).toBe(second);
+    expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("Second");
+  });
+
+  it("shows and reveals the path of a file-backed non-editor item", () => {
+    tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "breadcrumbs-"));
+    const source = path.join(tempRoot, "src");
+    fs.mkdirSync(source);
+    lumine.project.setPaths([tempRoot]);
+    const item = makePaneItem({
+      title: "sample.md Preview",
+      filePath: path.join(source, "sample.md"),
+      iconName: "markdown",
+    });
+    paneItems.push(item);
+    pane.addItem(item);
+    pane.activateItem(item);
+
+    const treeView = {
+      revealPath: jasmine.createSpy("revealPath").and.returnValue(Promise.resolve()),
+    };
+    treeDisposable = main.consumeTreeViewSelection(treeView);
+
+    const paths = view.element.querySelectorAll("button.breadcrumbs-path");
+    expect(Array.from(paths, (element) => element.textContent)).toEqual(["src", "sample.md"]);
+    paths[0].click();
+    expect(treeView.revealPath).toHaveBeenCalledWith(source, { show: true });
+
+    item.setPath(path.join(source, "renamed.md"));
+    expect(view.element.querySelectorAll(".breadcrumbs-path")[1].textContent).toBe("renamed.md");
+  });
+
+  it("keeps an empty bar for an active item with every crumb disabled", () => {
+    lumine.config.set("breadcrumbs.filePath", "off");
+    lumine.config.set("breadcrumbs.symbolPath", "off");
+
+    expect(view.element.parentElement).toBe(pane.getElement());
+    expect(view.element.hidden).toBe(false);
+    expect(view.element.querySelectorAll(".breadcrumbs-crumb").length).toBe(0);
   });
 
   it("shows the containing symbol path and jumps to a clicked symbol", async () => {
@@ -137,7 +266,7 @@ describe("breadcrumbs", () => {
     const fileReplacement = spyOn(view.fileContent, "replaceChildren").and.callThrough();
     const symbolReplacement = spyOn(view.symbolContent, "replaceChildren").and.callThrough();
     const iconApplication = spyOn(lumine.icons, "applyTo").and.callThrough();
-    const pathCalculation = spyOn(PathSegments, "forEditor").and.callThrough();
+    const pathCalculation = spyOn(PathSegments, "forItem").and.callThrough();
     const scrollScheduling = spyOn(view, "scheduleScrollToEnd").and.callThrough();
 
     for (let index = 0; index < 1000; index++) {
@@ -284,6 +413,29 @@ describe("breadcrumbs", () => {
     expect(registry.getFileSymbolTree).toHaveBeenCalledTimes(3);
   });
 
+  it("ignores a symbol response after switching to a non-editor item", async () => {
+    const registry = makeRegistry();
+    let resolveSymbols;
+    registry.peekFileSymbolTree = () => null;
+    registry.getFileSymbolTree = jasmine
+      .createSpy("getFileSymbolTree")
+      .and.callFake(() => new Promise((resolve) => (resolveSymbols = resolve)));
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    const pending = view.symbolRefresh.promise;
+
+    const item = makePaneItem({ title: "About", iconName: "info" });
+    paneItems.push(item);
+    pane.addItem(item);
+    pane.activateItem(item);
+    resolveSymbols(registry.tree);
+    await pending;
+
+    expect(view.item).toBe(item);
+    expect(view.editor).toBeNull();
+    expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("About");
+    expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
+  });
+
   it("loads symbols after the active editor is closed and another is opened", async () => {
     registryDisposable = main.consumeSymbolRegistry(makeRegistry());
     editor.setCursorBufferPosition([3, 0]);
@@ -428,6 +580,32 @@ describe("breadcrumbs", () => {
       lumine.config.unset("breadcrumbs.enabled", options);
       lumine.config.unset("breadcrumbs.filePath", options);
       lumine.config.unset("breadcrumbs.symbolPath", options);
+    }
+  });
+
+  it("uses an exposed grammar when resolving config for a non-editor item", async () => {
+    const item = makePaneItem({
+      title: "Preview",
+      grammar: { scopeName: "source.breadcrumbs-preview" },
+    });
+    const options = { scopeSelector: ".source.breadcrumbs-preview" };
+    paneItems.push(item);
+    try {
+      lumine.config.set("breadcrumbs.filePath", "off", options);
+      pane.addItem(item);
+      pane.activateItem(item);
+
+      expect(view.element.hidden).toBe(false);
+      expect(view.element.querySelectorAll(".breadcrumbs-crumb").length).toBe(0);
+
+      lumine.config.set("breadcrumbs.filePath", "on", options);
+      expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("Preview");
+
+      lumine.config.set("breadcrumbs.enabled", false, options);
+      expect(view.element.hidden).toBe(true);
+    } finally {
+      lumine.config.unset("breadcrumbs.enabled", options);
+      lumine.config.unset("breadcrumbs.filePath", options);
     }
   });
 

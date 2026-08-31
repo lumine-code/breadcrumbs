@@ -1,21 +1,21 @@
 # breadcrumbs
 
-Show file and symbol paths above each editor.
+Show file and symbol paths above each pane item.
 
-The bar follows every text editor pane. Project path segments reveal their file or folder in the tree view, while symbol segments jump to their declaration.
+The bar follows the active item in every non-empty center pane. File-backed items show their path, other items show their title, and text editors add symbol segments that jump to their declaration.
 
 ## Features
 
-- **File path**: show directories and the active file, keeping the project root when it adds context.
-- **Symbol path**: follow nested symbols from the shared symbol registry.
+- **Item context**: show a file hierarchy for file-backed items or a title for other pane items.
+- **Symbol path**: follow nested symbols from the shared symbol registry in text editors.
 - **Navigation**: reveal path segments in the tree view and jump to symbols.
-- **Per-pane state**: every split editor carries its own breadcrumbs.
+- **Per-pane state**: every split follows its own active pane item.
 
 ## Installation
 
 To install `breadcrumbs` search for it in the Install pane of the Lumine settings, or run `lumine --install lumine-code/breadcrumbs`.
 
-Symbol breadcrumbs require the `symbol` package and a compatible symbol provider. The file path remains available without them.
+Symbol breadcrumbs require the `symbol` package and a compatible symbol provider. The active item path or title remains available without them.
 
 ## Commands
 

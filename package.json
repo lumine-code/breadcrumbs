@@ -2,7 +2,7 @@
   "name": "breadcrumbs",
   "author": "lumine-code",
   "version": "1.0.0",
-  "description": "Show file and symbol paths above each editor.",
+  "description": "Show file and symbol paths above each pane item.",
   "keywords": [
     "navigation",
     "symbols",
@@ -27,7 +27,7 @@
     "node": ">=24"
   },
   "backgroundTips": [
-    "Breadcrumbs show the active file and symbol path above each editor."
+    "Breadcrumbs show the active item path and text-editor symbols above each pane."
   ],
   "scripts": {
     "test": "lumine --test spec",
@@ -38,7 +38,7 @@
   "configSchema": {
     "enabled": {
       "title": "Enabled",
-      "description": "Show breadcrumbs above text editors.",
+      "description": "Show breadcrumbs above pane items.",
       "type": "boolean",
       "scopeResolution": "grammar",
       "default": true
