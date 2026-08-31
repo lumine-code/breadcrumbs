@@ -43,6 +43,18 @@
       "scopeResolution": "grammar",
       "default": true
     },
+    "onlyWithPath": {
+      "title": "Only With Path",
+      "description": "Show breadcrumbs only for items with a file path, except unsaved text editors allowed by Show Unsaved Editors.",
+      "type": "boolean",
+      "default": true
+    },
+    "showUnsavedEditors": {
+      "title": "Show Unsaved Editors",
+      "description": "Show breadcrumbs for unsaved text editors that do not have a file path.",
+      "type": "boolean",
+      "default": true
+    },
     "filePath": {
       "title": "File Path",
       "description": "Show the full file path, only the file name, or no file path.",

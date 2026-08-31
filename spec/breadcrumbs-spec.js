@@ -94,6 +94,7 @@ describe("breadcrumbs", () => {
     treeDisposable,
     iconRegistration,
     projectPaths,
+    defaultFile,
     tempRoot,
     paneItems;
 
@@ -103,6 +104,8 @@ describe("breadcrumbs", () => {
     paneItems = [];
     projectPaths = lumine.project.getPaths();
     lumine.config.set("breadcrumbs.enabled", true);
+    lumine.config.set("breadcrumbs.onlyWithPath", true);
+    lumine.config.set("breadcrumbs.showUnsavedEditors", true);
     lumine.config.set("breadcrumbs.filePath", "on");
     lumine.config.set("breadcrumbs.symbolPath", "on");
     lumine.config.set("breadcrumbs.icons", true);
@@ -110,7 +113,9 @@ describe("breadcrumbs", () => {
     lumine.config.set("breadcrumbs.scrollZone", [0, 50]);
     pack = await lumine.packages.activatePackage("breadcrumbs");
     main = pack.mainModule;
-    editor = await lumine.workspace.open();
+    defaultFile = path.resolve(__dirname, "..", "package.json");
+    lumine.project.setPaths([path.dirname(defaultFile)]);
+    editor = await lumine.workspace.open(defaultFile);
     editor.setText(Array(10).fill("// line").join("\n"));
     pane = lumine.workspace.getCenter().getActivePane();
     view = main.controller.views.get(pane);
@@ -153,7 +158,7 @@ describe("breadcrumbs", () => {
     expect(pane.getElement().querySelector(":scope > .breadcrumbs")).toBeNull();
   });
 
-  it("shows and updates a title-only pane item without asking for symbols", () => {
+  it("hides a pathless non-editor by default and honors onlyWithPath", () => {
     const item = makePaneItem({ title: "Settings", iconName: "gear" });
     paneItems.push(item);
     pane.addItem(item);
@@ -165,31 +170,65 @@ describe("breadcrumbs", () => {
 
     expect(view.item).toBe(item);
     expect(view.editor).toBeNull();
+    expect(view.element.hidden).toBe(true);
+    expect(view.element.querySelector(".breadcrumbs-path")).toBeNull();
+    expect(registry.getFileSymbolTree).not.toHaveBeenCalled();
+
+    lumine.config.set("breadcrumbs.onlyWithPath", false);
     expect(view.element.hidden).toBe(false);
     expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("Settings");
     expect(view.element.querySelector(".breadcrumbs-icon").classList).toContain("icon-gear");
-    expect(registry.getFileSymbolTree).not.toHaveBeenCalled();
 
     item.setTitle("Preferences");
     item.setIconName("info");
     expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("Preferences");
     expect(view.element.querySelector(".breadcrumbs-icon").classList).toContain("icon-info");
+
+    lumine.config.set("breadcrumbs.onlyWithPath", true);
+    expect(view.element.hidden).toBe(true);
+    expect(view.element.querySelector(".breadcrumbs-path")).toBeNull();
   });
 
   it("switches between non-editor pane items and drops stale subscriptions", () => {
-    const first = makePaneItem({ title: "First" });
-    const second = makePaneItem({ title: "Second" });
+    const first = makePaneItem({ title: "First", filePath: path.join(os.tmpdir(), "first.txt") });
+    const second = makePaneItem({
+      title: "Second",
+      filePath: path.join(os.tmpdir(), "second.txt"),
+    });
     paneItems.push(first, second);
     pane.addItem(first);
     pane.addItem(second);
 
     pane.activateItem(first);
-    expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("First");
+    expect(view.element.querySelector(".breadcrumbs-path:last-child").textContent).toBe(
+      "first.txt",
+    );
     pane.activateItem(second);
-    first.setTitle("Stale");
+    first.setPath(path.join(os.tmpdir(), "stale.txt"));
 
     expect(view.item).toBe(second);
-    expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("Second");
+    expect(view.element.querySelector(".breadcrumbs-path:last-child").textContent).toBe(
+      "second.txt",
+    );
+  });
+
+  it("shows a non-editor item when it gains a path and hides it when the path is removed", () => {
+    const item = makePaneItem({ title: "Preview", filePath: null });
+    paneItems.push(item);
+    pane.addItem(item);
+    pane.activateItem(item);
+
+    expect(view.element.hidden).toBe(true);
+
+    item.setPath(path.join(os.tmpdir(), "preview.md"));
+    expect(view.element.hidden).toBe(false);
+    expect(view.element.querySelector(".breadcrumbs-path:last-child").textContent).toBe(
+      "preview.md",
+    );
+
+    item.setPath(null);
+    expect(view.element.hidden).toBe(true);
+    expect(view.element.querySelector(".breadcrumbs-path")).toBeNull();
   });
 
   it("shows and reveals the path of a file-backed non-editor item", () => {
@@ -462,7 +501,8 @@ describe("breadcrumbs", () => {
 
     expect(view.item).toBe(item);
     expect(view.editor).toBeNull();
-    expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("About");
+    expect(view.element.hidden).toBe(true);
+    expect(view.element.querySelector(".breadcrumbs-path")).toBeNull();
     expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
   });
 
@@ -474,7 +514,7 @@ describe("breadcrumbs", () => {
     });
 
     await pane.destroyItem(editor);
-    editor = await lumine.workspace.open();
+    editor = await lumine.workspace.open(defaultFile);
     editor.setText(Array(10).fill("// line").join("\n"));
     editor.setCursorBufferPosition([3, 0]);
     pane = lumine.workspace.getCenter().getActivePane();
@@ -654,6 +694,7 @@ describe("breadcrumbs", () => {
   it("uses an exposed grammar when resolving config for a non-editor item", async () => {
     const item = makePaneItem({
       title: "Preview",
+      filePath: path.join(os.tmpdir(), "preview.md"),
       grammar: { scopeName: "source.breadcrumbs-preview" },
     });
     const options = { scopeSelector: ".source.breadcrumbs-preview" };
@@ -667,7 +708,9 @@ describe("breadcrumbs", () => {
       expect(view.element.querySelectorAll(".breadcrumbs-crumb").length).toBe(0);
 
       lumine.config.set("breadcrumbs.filePath", "on", options);
-      expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("Preview");
+      expect(view.element.querySelector(".breadcrumbs-path:last-child").textContent).toBe(
+        "preview.md",
+      );
 
       lumine.config.set("breadcrumbs.enabled", false, options);
       expect(view.element.hidden).toBe(true);
@@ -680,6 +723,33 @@ describe("breadcrumbs", () => {
   it("keeps file breadcrumbs when no symbol registry is available", () => {
     expect(view.element.hidden).toBe(false);
     expect(view.element.querySelectorAll(".breadcrumbs-path").length).toBe(1);
+    expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("package.json");
     expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
+  });
+
+  it("shows unsaved text editors by default and honors showUnsavedEditors", async () => {
+    const savedEditor = editor;
+    const untitledEditor = await lumine.workspace.open();
+    editor = untitledEditor;
+    pane = lumine.workspace.getCenter().getActivePane();
+    view = main.controller.views.get(pane);
+
+    expect(view.editor).toBe(untitledEditor);
+    expect(view.element.hidden).toBe(false);
+    expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("untitled");
+
+    lumine.config.set("breadcrumbs.showUnsavedEditors", false);
+    expect(view.element.hidden).toBe(true);
+    expect(view.element.querySelectorAll(".breadcrumbs-crumb").length).toBe(0);
+
+    lumine.config.set("breadcrumbs.onlyWithPath", false);
+    expect(view.element.hidden).toBe(true);
+
+    lumine.config.set("breadcrumbs.showUnsavedEditors", true);
+    expect(view.element.hidden).toBe(false);
+    expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("untitled");
+
+    untitledEditor.destroy();
+    editor = savedEditor;
   });
 });

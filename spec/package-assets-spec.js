@@ -47,6 +47,23 @@ describe("breadcrumbs package assets", () => {
     expect(config.default).toBe(true);
   });
 
+  it("defines pathless-item visibility defaults", () => {
+    const config = JSON.parse(read("package.json")).configSchema;
+    expect(config.onlyWithPath).toEqual({
+      title: "Only With Path",
+      description:
+        "Show breadcrumbs only for items with a file path, except unsaved text editors allowed by Show Unsaved Editors.",
+      type: "boolean",
+      default: true,
+    });
+    expect(config.showUnsavedEditors).toEqual({
+      title: "Show Unsaved Editors",
+      description: "Show breadcrumbs for unsaved text editors that do not have a file path.",
+      type: "boolean",
+      default: true,
+    });
+  });
+
   it("ships one menu file, one stylesheet, and no keymap", () => {
     const menu = JSON.parse(read("menus/main.json"));
     expect(menu.menu[0].label).toBe("View");

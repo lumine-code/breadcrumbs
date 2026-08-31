@@ -2,11 +2,11 @@
 
 Show file and symbol paths above each pane item.
 
-The bar follows the active item in every non-empty center pane. File-backed items show their path, other items show their title, and text editors add symbol segments that jump to their declaration.
+The bar follows the active item in every non-empty center pane when it exposes a file path. Unsaved text editors can retain a title crumb as an explicit exception, and text editors add symbol segments that jump to their declaration.
 
 ## Features
 
-- **Item context**: show a file hierarchy for file-backed items or a title for other pane items.
+- **Item context**: show a file hierarchy for file-backed items, optionally show titles for pathless items, and control unsaved text editors separately.
 - **Symbol path**: follow nested symbols from the shared symbol registry in text editors.
 - **Navigation**: reveal path segments in the tree view and jump to symbols.
 - **Per-pane state**: every split follows its own active pane item.
@@ -15,7 +15,7 @@ The bar follows the active item in every non-empty center pane. File-backed item
 
 To install `breadcrumbs` search for it in the Install pane of the Lumine settings, or run `lumine --install lumine-code/breadcrumbs`.
 
-Symbol breadcrumbs require the `symbol` package and a compatible symbol provider. The active item path or title remains available without them.
+Symbol breadcrumbs require the `symbol` package and a compatible symbol provider. The active item path or enabled title fallback remains available without them.
 
 ## Commands
 
