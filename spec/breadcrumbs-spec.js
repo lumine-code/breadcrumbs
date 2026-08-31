@@ -58,6 +58,7 @@ describe("breadcrumbs", () => {
     lumine.config.set("breadcrumbs.filePath", "on");
     lumine.config.set("breadcrumbs.symbolPath", "on");
     lumine.config.set("breadcrumbs.icons", true);
+    lumine.config.set("breadcrumbs.hideSingleProjectRoot", true);
     lumine.config.set("breadcrumbs.scrollZone", [0, 50]);
     pack = await lumine.packages.activatePackage("breadcrumbs");
     main = pack.mainModule;
@@ -317,17 +318,33 @@ describe("breadcrumbs", () => {
     treeDisposable = main.consumeTreeViewSelection(treeView);
     view.render();
     const paths = view.element.querySelectorAll("button.breadcrumbs-path");
-    expect(Array.from(paths, (element) => element.textContent)).toEqual([
-      path.basename(tempRoot),
-      "src",
-      "sample.js",
-    ]);
-    expect(paths[1].hasAttribute("title")).toBe(false);
-    expect(paths[1].hasAttribute("data-original-title")).toBe(false);
-    expect(lumine.tooltips.findTooltips(paths[1])).toEqual([]);
+    expect(Array.from(paths, (element) => element.textContent)).toEqual(["src", "sample.js"]);
+    expect(paths[0].hasAttribute("title")).toBe(false);
+    expect(paths[0].hasAttribute("data-original-title")).toBe(false);
+    expect(lumine.tooltips.findTooltips(paths[0])).toEqual([]);
 
-    paths[1].click();
+    paths[0].click();
     expect(treeView.revealPath).toHaveBeenCalledWith(source, { show: true });
+  });
+
+  it("keeps the project root for multiple roots or when configured", async () => {
+    tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "breadcrumbs-"));
+    const source = path.join(tempRoot, "src");
+    const otherRoot = path.join(tempRoot, "other-root");
+    fs.mkdirSync(source);
+    fs.mkdirSync(otherRoot);
+    await editor.saveAs(path.join(source, "sample.js"));
+
+    lumine.project.setPaths([tempRoot, otherRoot]);
+    expect(
+      Array.from(view.element.querySelectorAll(".breadcrumbs-path"), (item) => item.textContent),
+    ).toEqual([path.basename(tempRoot), "src", "sample.js"]);
+
+    lumine.project.setPaths([tempRoot]);
+    lumine.config.set("breadcrumbs.hideSingleProjectRoot", false);
+    expect(
+      Array.from(view.element.querySelectorAll(".breadcrumbs-path"), (item) => item.textContent),
+    ).toEqual([path.basename(tempRoot), "src", "sample.js"]);
   });
 
   it("updates only file crumbs when project roots change", async () => {
@@ -347,11 +364,7 @@ describe("breadcrumbs", () => {
     lumine.project.setPaths([tempRoot]);
 
     const pathCrumbs = Array.from(view.element.querySelectorAll(".breadcrumbs-path"));
-    expect(pathCrumbs.map((item) => item.textContent)).toEqual([
-      path.basename(tempRoot),
-      "src",
-      "sample.js",
-    ]);
+    expect(pathCrumbs.map((item) => item.textContent)).toEqual(["src", "sample.js"]);
     expect(pathCrumbs[0]).not.toBe(previousPathCrumbs[0]);
     expect(Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"))).toEqual(symbolCrumbs);
   });

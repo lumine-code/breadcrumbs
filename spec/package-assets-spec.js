@@ -41,6 +41,12 @@ describe("breadcrumbs package assets", () => {
     expect(config.default).toEqual([0, 50]);
   });
 
+  it("hides a redundant single project root by default", () => {
+    const config = JSON.parse(read("package.json")).configSchema.hideSingleProjectRoot;
+    expect(config.type).toBe("boolean");
+    expect(config.default).toBe(true);
+  });
+
   it("ships one menu file, one stylesheet, and no keymap", () => {
     const menu = JSON.parse(read("menus/main.json"));
     expect(menu.menu[0].label).toBe("View");

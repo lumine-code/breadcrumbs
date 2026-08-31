@@ -6,7 +6,7 @@ The bar follows every text editor pane. Project path segments reveal their file 
 
 ## Features
 
-- **File path**: show the project root, directories, and active file.
+- **File path**: show directories and the active file, keeping the project root when it adds context.
 - **Symbol path**: follow nested symbols from the shared symbol registry.
 - **Navigation**: reveal path segments in the tree view and jump to symbols.
 - **Per-pane state**: every split editor carries its own breadcrumbs.

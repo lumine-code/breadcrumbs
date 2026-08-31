@@ -55,6 +55,12 @@
       "scopeResolution": "grammar",
       "default": "on"
     },
+    "hideSingleProjectRoot": {
+      "title": "Hide Single Project Root",
+      "description": "Hide the project-root segment when exactly one root is open and the active file belongs to it.",
+      "type": "boolean",
+      "default": true
+    },
     "symbolPath": {
       "title": "Symbol Path",
       "description": "Show the full symbol path, only the innermost symbol, or no symbols.",
