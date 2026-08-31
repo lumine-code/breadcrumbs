@@ -15,6 +15,13 @@ describe("breadcrumbs package assets", () => {
     expect(pkg.keywords).toEqual(["navigation", "symbols", "path", "hierarchy", "folders"]);
   });
 
+  it("resolves visibility settings per grammar", () => {
+    const config = JSON.parse(read("package.json")).configSchema;
+    expect(config.enabled.scopeResolution).toBe("grammar");
+    expect(config.filePath.scopeResolution).toBe("grammar");
+    expect(config.symbolPath.scopeResolution).toBe("grammar");
+  });
+
   it("consumes the shared symbol tree and tree-view reveal services", () => {
     const pkg = JSON.parse(read("package.json"));
     expect(pkg.consumedServices["symbol.registry"].versions["^1.1.0"]).toBe(

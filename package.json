@@ -40,6 +40,7 @@
       "title": "Enabled",
       "description": "Show breadcrumbs above text editors.",
       "type": "boolean",
+      "scopeResolution": "grammar",
       "default": true
     },
     "filePath": {
@@ -51,6 +52,7 @@
         "off",
         "last"
       ],
+      "scopeResolution": "grammar",
       "default": "on"
     },
     "symbolPath": {
@@ -62,6 +64,7 @@
         "off",
         "last"
       ],
+      "scopeResolution": "grammar",
       "default": "on"
     },
     "icons": {

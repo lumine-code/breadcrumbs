@@ -388,6 +388,37 @@ describe("breadcrumbs", () => {
     expect(view.element.hidden).toBe(false);
   });
 
+  it("honors visibility settings scoped to the editor grammar", async () => {
+    registryDisposable = main.consumeSymbolRegistry(makeRegistry());
+    editor.setCursorBufferPosition([3, 0]);
+    await waitForFrames(() => view.element.querySelectorAll(".breadcrumbs-symbol").length === 2, {
+      description: "the initial symbol path to render",
+    });
+
+    const rootScope = editor.getRootScopeDescriptor().getScopesArray()[0];
+    const options = { scopeSelector: `.${rootScope}` };
+    try {
+      lumine.config.set("breadcrumbs.filePath", "off", options);
+      lumine.config.set("breadcrumbs.symbolPath", "last", options);
+      await waitForFrames(
+        () =>
+          view.element.querySelectorAll(".breadcrumbs-path").length === 0 &&
+          view.element.querySelectorAll(".breadcrumbs-symbol").length === 1,
+        { description: "the grammar-scoped path settings to apply" },
+      );
+      expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("inner");
+
+      lumine.config.set("breadcrumbs.enabled", false, options);
+      await waitForFrames(() => view.element.hidden, {
+        description: "the grammar-scoped disable to apply",
+      });
+    } finally {
+      lumine.config.unset("breadcrumbs.enabled", options);
+      lumine.config.unset("breadcrumbs.filePath", options);
+      lumine.config.unset("breadcrumbs.symbolPath", options);
+    }
+  });
+
   it("keeps file breadcrumbs when no symbol registry is available", () => {
     expect(view.element.hidden).toBe(false);
     expect(view.element.querySelectorAll(".breadcrumbs-path").length).toBe(1);
