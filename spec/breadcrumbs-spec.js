@@ -1,7 +1,7 @@
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { Emitter, Point, Range } = require("lumine");
+const { Emitter, Icon, Point, Range } = require("lumine");
 const PathSegments = require("../lib/path-segments");
 
 let paneItemId = 0;
@@ -322,8 +322,11 @@ describe("breadcrumbs", () => {
       {
         id: "breadcrumbs-spec",
         handles: ["kind"],
+        usesContext: true,
         iconFor(target) {
-          return target.context === "breadcrumbs" && target.kind === "class" ? "icon-flame" : null;
+          return target.context === "breadcrumbs" && target.kind === "class"
+            ? Icon.classes(["icon-flame"])
+            : null;
         },
       },
       { priority: 100 },
@@ -336,6 +339,33 @@ describe("breadcrumbs", () => {
     iconRegistration = null;
     await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol .icon-puzzle"), {
       description: "the core class icon to return",
+    });
+  });
+
+  it("routes an explicit symbol icon through the shared name registry", async () => {
+    const registry = makeRegistry();
+    registry.tree[0].icon = "flame";
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol .icon-flame"), {
+      description: "the explicit symbol icon to render",
+    });
+
+    iconRegistration = lumine.icons.addProvider(
+      {
+        id: "breadcrumbs-explicit-spec",
+        handles: ["name"],
+        usesContext: true,
+        iconFor(target) {
+          return target.context === "breadcrumbs" && target.name === "flame"
+            ? Icon.classes(["icon-star"])
+            : null;
+        },
+      },
+      { priority: 100 },
+    );
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol .icon-star"), {
+      description: "the explicit icon to repaint from the shared provider",
     });
   });
 
@@ -528,6 +558,10 @@ describe("breadcrumbs", () => {
       routingChangedPrefixes: [repositoryPath],
     });
 
+    await waitForFrames(
+      () => view.element.querySelector(".breadcrumbs-path .breadcrumbs-icon.icon-repo"),
+      { description: "the batched repository icon invalidation to repaint" },
+    );
     repositoryIcon = view.element.querySelector(".breadcrumbs-path .breadcrumbs-icon");
     expect(repositoryIcon.classList).toContain("icon-repo");
     expect(repositoryIcon.classList).not.toContain("icon-file-directory");
