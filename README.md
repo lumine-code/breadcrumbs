@@ -13,7 +13,7 @@ The bar follows the active item in every non-empty center pane when it exposes a
 
 ## Installation
 
-To install `breadcrumbs` search for it in the Install pane of the Lumine settings, or run `lumine --install lumine-code/breadcrumbs`.
+To install `breadcrumbs` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/breadcrumbs`.
 
 Symbol breadcrumbs require the `symbol` package and a compatible symbol provider. The active item path or enabled title fallback remains available without them.
 
