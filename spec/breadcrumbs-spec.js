@@ -132,7 +132,10 @@ describe("breadcrumbs", () => {
     lumine.project.setPaths(projectPaths);
     editor?.destroy();
     await lumine.packages.deactivatePackage("breadcrumbs");
-    if (tempRoot) fs.rmSync(tempRoot, { recursive: true, force: true });
+    await lumine.fileWatchClient.settlePendingTeardown();
+    if (tempRoot) {
+      fs.rmSync(tempRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    }
   });
 
   it("places one bar before the item views in every center pane", () => {
