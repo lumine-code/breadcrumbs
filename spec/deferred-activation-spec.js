@@ -35,13 +35,15 @@ describe("breadcrumbs bootstrap activation", () => {
     expect(pack.mainActivated).toBe(true);
   });
 
-  it("is already active when the first text editor is used", async () => {
+  it("initializes its controller for the first pane item, including custom items", async () => {
     const pane = lumine.workspace.getActivePane();
     const nonTextItem = document.createElement("div");
+    nonTextItem.getPath = () => path.join(PACKAGE_PATH, "package.json");
     pane.addItem(nonTextItem);
 
     expect(lumine.packages.getPackageLifecycleState(PACKAGE_NAME)).toBe("active");
     expect(pack.mainModule).not.toBeNull();
+    expect(pack.mainModule.controller).not.toBeNull();
 
     const editor = await lumine.workspace.open(null, { autoIndent: false });
 
