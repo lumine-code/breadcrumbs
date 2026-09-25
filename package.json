@@ -26,9 +26,6 @@
     "lumine": "^1.0.0",
     "node": ">=24"
   },
-  "backgroundTips": [
-    "Breadcrumbs show the active item path and text-editor symbols above each pane."
-  ],
   "scripts": {
     "test": "lumine --test spec",
     "lint": "eslint . --max-warnings 0",
@@ -106,6 +103,13 @@
         0,
         50
       ]
+    }
+  },
+  "providedServices": {
+    "background-tips.provider": {
+      "versions": {
+        "1.0.0": "provideBackgroundTips"
+      }
     }
   },
   "consumedServices": {
