@@ -755,4 +755,51 @@ describe("breadcrumbs", () => {
     untitledEditor.destroy();
     editor = savedEditor;
   });
+  it("clears a current null symbol tree while retaining the file path", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await waitForFrames(() => view.element.querySelector(".breadcrumbs-symbol"), {
+      description: "the initial symbol path to render",
+    });
+    const filePath = view.fileContent.textContent;
+    registry.tree = null;
+    registry.invalidate(editor);
+    await view.symbolRefresh.promise;
+    expect(view.symbolTree).toBeNull();
+    expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
+    expect(view.fileContent.textContent).toBe(filePath);
+    expect(view.element.hidden).toBe(false);
+  });
+
+  it("ignores a superseded null result after a newer tree arrives", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    await view.symbolRefresh.promise;
+    const pending = [];
+    registry.getFileSymbolTree = () => new Promise((resolve) => pending.push(resolve));
+    const previous = view.invalidateSymbols();
+    const current = view.invalidateSymbols();
+    pending[1](registry.tree);
+    await current;
+    pending[0](null);
+    await previous;
+    expect(view.symbolTree).toBe(registry.tree);
+    expect(view.element.querySelector(".breadcrumbs-symbol")).not.toBeNull();
+  });
+
+  it("discards ranges returned after the buffer changed during a request", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    await view.symbolRefresh.promise;
+    let complete;
+    registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
+    const pending = view.invalidateSymbols();
+    editor.insertText("\n");
+    complete(registry.tree);
+    await pending;
+    expect(view.symbolTree).toBeNull();
+    expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
+    expect(view.element.querySelector(".breadcrumbs-path")).not.toBeNull();
+  });
 });

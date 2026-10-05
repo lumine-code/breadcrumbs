@@ -26,6 +26,11 @@
     "lumine": "^1.0.0",
     "node": ">=24"
   },
+  "specPackages": [
+    "language-javascript",
+    "symbol",
+    "symbol-tree-sitter"
+  ],
   "scripts": {
     "test": "lumine --test spec",
     "lint": "eslint . --max-warnings 0",
