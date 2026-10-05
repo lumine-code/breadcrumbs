@@ -17,6 +17,8 @@ To install `breadcrumbs` search for it in the Install pane of the Lumine setting
 
 Symbol breadcrumbs require the `symbol` package and a compatible symbol provider. The active item path or enabled title fallback remains available without them.
 
+Selecting a document symbol source in `symbol` also updates breadcrumbs and the outline. A file choice affects that editor, and a grammar preference applies to editors without a file choice. Auto restores the hub's normal source preference and fallback. File crumbs remain available while the selected source is loading or unavailable.
+
 ## Commands
 
 Commands available in `lumine-workspace`:

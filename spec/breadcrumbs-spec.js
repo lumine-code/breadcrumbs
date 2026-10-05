@@ -788,6 +788,26 @@ describe("breadcrumbs", () => {
     expect(view.element.querySelector(".breadcrumbs-symbol")).not.toBeNull();
   });
 
+  it("clears obsolete symbols immediately while their replacement is pending", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await view.symbolRefresh.promise;
+    const filePath = view.fileContent.textContent;
+    expect(view.element.querySelector(".breadcrumbs-symbol")).not.toBeNull();
+    let complete;
+    registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
+    registry.invalidate(editor);
+    const pending = view.symbolRefresh.promise;
+    expect(view.symbolTree).toBeNull();
+    expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
+    expect(view.fileContent.textContent).toBe(filePath);
+    complete([]);
+    await pending;
+    expect(view.symbolTree).toEqual([]);
+    expect(view.fileContent.textContent).toBe(filePath);
+  });
+
   it("discards ranges returned after the buffer changed during a request", async () => {
     const registry = makeRegistry();
     registryDisposable = main.consumeSymbolRegistry(registry);
