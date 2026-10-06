@@ -6,6 +6,26 @@ const PathSegments = require("../lib/path-segments");
 
 let paneItemId = 0;
 
+function installClock() {
+  const methods = ["setTimeout", "clearTimeout", "setInterval", "clearInterval"];
+  const timerSpies = methods.map((method) => [method, window[method]]);
+  for (const [method, spy] of timerSpies) window[method] = spy.and?.originalFn ?? spy;
+  const clock = jasmine.clock();
+  try {
+    clock.install();
+  } catch (error) {
+    for (const [method, spy] of timerSpies) window[method] = spy;
+    throw error;
+  }
+  return {
+    tick: (delay) => clock.tick(delay),
+    uninstall() {
+      clock.uninstall();
+      for (const [method, spy] of timerSpies) window[method] = spy;
+    },
+  };
+}
+
 function makePaneItem(options = {}) {
   const emitter = new Emitter();
   const item = document.createElement("div");
@@ -788,38 +808,282 @@ describe("breadcrumbs", () => {
     expect(view.element.querySelector(".breadcrumbs-symbol")).not.toBeNull();
   });
 
-  it("clears obsolete symbols immediately while their replacement is pending", async () => {
+  it("keeps symbol crumbs stable and interactive during a quick refresh", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await view.symbolRefresh.promise;
+    const tree = view.symbolTree;
+    const symbols = Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"));
+    const replacement = [
+      {
+        ...tree[0],
+        name: "Updated",
+        children: [{ ...tree[0].children[0], name: "updated" }],
+      },
+    ];
+    const symbolReplacement = spyOn(view.symbolContent, "replaceChildren").and.callThrough();
+    let complete;
+    registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
+    const clock = installClock();
+    try {
+      const pending = view.invalidateSymbols();
+      editor.setCursorBufferPosition([7, 0]);
+      clock.tick(199);
+      expect(view.symbolTree).toBe(tree);
+      expect(Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"))).toEqual(symbols);
+      expect(symbolReplacement).not.toHaveBeenCalled();
+      symbols[1].click();
+      expect(editor.getCursorBufferPosition().isEqual([2, 2])).toBe(true);
+
+      complete(replacement);
+      await pending;
+      expect(view.symbolTree).toBe(replacement);
+      expect(symbolReplacement).toHaveBeenCalledTimes(1);
+      expect(
+        Array.from(
+          view.element.querySelectorAll(".breadcrumbs-symbol"),
+          (item) => item.textContent,
+        ),
+      ).toEqual(["Updated", "updated"]);
+      clock.tick(1);
+      expect(view.symbolTree).toBe(replacement);
+      expect(symbolReplacement).toHaveBeenCalledTimes(1);
+      expect(view.symbolRefreshTimer).toBeNull();
+    } finally {
+      clock.uninstall();
+    }
+  });
+
+  it("clears symbols after the 200 ms grace and accepts a later replacement", async () => {
     const registry = makeRegistry();
     registryDisposable = main.consumeSymbolRegistry(registry);
     editor.setCursorBufferPosition([3, 0]);
     await view.symbolRefresh.promise;
     const filePath = view.fileContent.textContent;
-    expect(view.element.querySelector(".breadcrumbs-symbol")).not.toBeNull();
+    const symbols = Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"));
     let complete;
     registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
-    registry.invalidate(editor);
-    const pending = view.symbolRefresh.promise;
-    expect(view.symbolTree).toBeNull();
-    expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
-    expect(view.fileContent.textContent).toBe(filePath);
-    complete([]);
-    await pending;
+    const clock = installClock();
+    try {
+      const pending = view.invalidateSymbols();
+      clock.tick(199);
+      expect(Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"))).toEqual(symbols);
+      clock.tick(1);
+      expect(view.symbolTree).toBeNull();
+      expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
+      expect(view.fileContent.textContent).toBe(filePath);
+      expect(view.element.hidden).toBe(false);
+
+      complete(registry.tree);
+      await pending;
+      expect(view.symbolTree).toBe(registry.tree);
+      expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(2);
+      expect(view.fileContent.textContent).toBe(filePath);
+    } finally {
+      clock.uninstall();
+    }
+  });
+
+  it("applies an authoritative empty tree before the refresh grace expires", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await view.symbolRefresh.promise;
+    registry.getFileSymbolTree = async () => [];
+    await view.invalidateSymbols();
     expect(view.symbolTree).toEqual([]);
-    expect(view.fileContent.textContent).toBe(filePath);
+    expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
+    expect(view.symbolRefreshTimer).toBeNull();
+  });
+
+  it("accepts symbols when only the editor display changed during a request", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await view.symbolRefresh.promise;
+    const replacement = [{ ...registry.tree[0], name: "Updated" }];
+    let complete;
+    registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
+    const pending = view.invalidateSymbols();
+    editor.foldBufferRange([
+      [1, 0],
+      [4, 0],
+    ]);
+    complete(replacement);
+    await pending;
+    expect(view.symbolTree).toBe(replacement);
+    expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Updated");
+    expect(view.symbolRefreshTimer).toBeNull();
+  });
+
+  it("renews the grace for a replacement request and ignores the previous result", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await view.symbolRefresh.promise;
+    const tree = view.symbolTree;
+    const pending = [];
+    registry.getFileSymbolTree = () => new Promise((resolve) => pending.push(resolve));
+    const clock = installClock();
+    try {
+      const previous = view.invalidateSymbols();
+      clock.tick(100);
+      const current = view.invalidateSymbols();
+      clock.tick(100);
+      pending[0](null);
+      await previous;
+      expect(view.symbolTree).toBe(tree);
+      expect(view.element.querySelector(".breadcrumbs-symbol")).not.toBeNull();
+      clock.tick(99);
+      expect(view.symbolTree).toBe(tree);
+      clock.tick(1);
+      expect(view.symbolTree).toBeNull();
+      pending[1](tree);
+      await current;
+      expect(view.symbolTree).toBe(tree);
+    } finally {
+      clock.uninstall();
+    }
   });
 
   it("discards ranges returned after the buffer changed during a request", async () => {
     const registry = makeRegistry();
     registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await view.symbolRefresh.promise;
+    const tree = view.symbolTree;
+    const symbols = Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"));
+    let complete;
+    registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
+    const clock = installClock();
+    try {
+      const pending = view.invalidateSymbols();
+      editor.insertText("\n");
+      complete([{ ...tree[0], name: "Obsolete" }]);
+      await pending;
+      expect(view.symbolTree).toBe(tree);
+      expect(Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"))).toEqual(symbols);
+      clock.tick(200);
+      expect(view.symbolTree).toBeNull();
+      expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
+      expect(view.element.querySelector(".breadcrumbs-path")).not.toBeNull();
+    } finally {
+      clock.uninstall();
+    }
+  });
+
+  it("cancels the refresh grace when symbols are disabled", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
     await view.symbolRefresh.promise;
     let complete;
     registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
+    const clock = installClock();
+    try {
+      const pending = view.invalidateSymbols();
+      lumine.config.set("breadcrumbs.symbolPath", "off");
+      expect(view.symbolRefreshTimer).toBeNull();
+      expect(view.element.querySelector(".breadcrumbs-symbol")).toBeNull();
+      complete(registry.tree);
+      await pending;
+      clock.tick(200);
+      expect(view.element.querySelector(".breadcrumbs-symbol")).toBeNull();
+    } finally {
+      clock.uninstall();
+    }
+  });
+
+  it("retains the refresh grace through unrelated file-path settings", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await view.symbolRefresh.promise;
+    const symbols = Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"));
+    let complete;
+    registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
     const pending = view.invalidateSymbols();
-    editor.insertText("\n");
+    const timer = view.symbolRefreshTimer;
+    lumine.config.set("breadcrumbs.hideSingleProjectRoot", false);
+    expect(view.symbolRefreshTimer).toBe(timer);
+    expect(Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"))).toEqual(symbols);
     complete(registry.tree);
     await pending;
-    expect(view.symbolTree).toBeNull();
-    expect(view.element.querySelectorAll(".breadcrumbs-symbol").length).toBe(0);
-    expect(view.element.querySelector(".breadcrumbs-path")).not.toBeNull();
+    expect(view.symbolRefreshTimer).toBeNull();
+  });
+
+  it("cancels the grace when switching to a different pane item", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await view.symbolRefresh.promise;
+    let complete;
+    registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
+    const clock = installClock();
+    try {
+      const pending = view.invalidateSymbols();
+      const item = makePaneItem({ title: "Preview", filePath: defaultFile });
+      paneItems.push(item);
+      pane.addItem(item);
+      pane.activateItem(item);
+      expect(view.symbolRefreshTimer).toBeNull();
+      complete(registry.tree);
+      await pending;
+      clock.tick(200);
+      expect(view.item).toBe(item);
+      expect(view.element.querySelector(".breadcrumbs-symbol")).toBeNull();
+      expect(view.element.querySelector(".breadcrumbs-path").textContent).toBe("package.json");
+    } finally {
+      clock.uninstall();
+    }
+  });
+
+  it("does not let an old refresh timer clear another registry's symbols", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await view.symbolRefresh.promise;
+    let complete;
+    registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
+    const clock = installClock();
+    try {
+      const pending = view.invalidateSymbols();
+      registryDisposable.dispose();
+      const replacement = makeRegistry();
+      replacement.tree[0].name = "Replacement";
+      registryDisposable = main.consumeSymbolRegistry(replacement);
+      await view.symbolRefresh.promise;
+      expect(view.symbolRefreshTimer).toBeNull();
+      complete(null);
+      await pending;
+      clock.tick(200);
+      expect(view.symbolTree).toBe(replacement.tree);
+      expect(view.element.querySelector(".breadcrumbs-symbol").textContent).toBe("Replacement");
+    } finally {
+      clock.uninstall();
+    }
+  });
+
+  it("cancels the refresh grace when the pane view is destroyed", async () => {
+    const registry = makeRegistry();
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    await view.symbolRefresh.promise;
+    let complete;
+    registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
+    const clock = installClock();
+    try {
+      const pending = view.invalidateSymbols();
+      view.destroy();
+      const render = spyOn(view, "render").and.callThrough();
+      expect(view.symbolRefreshTimer).toBeNull();
+      complete(registry.tree);
+      await pending;
+      clock.tick(200);
+      expect(render).not.toHaveBeenCalled();
+      expect(view.element.isConnected).toBe(false);
+    } finally {
+      clock.uninstall();
+    }
   });
 });

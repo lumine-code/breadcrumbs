@@ -19,6 +19,8 @@ Symbol breadcrumbs require the `symbol` package and a compatible symbol provider
 
 Selecting a document symbol source in `symbol` also updates breadcrumbs and the outline. A file choice affects that editor, and a grammar preference applies to editors without a file choice. Auto restores the hub's normal source preference and fallback. File crumbs remain available while the selected source is loading or unavailable.
 
+Refreshing symbols after edits or saves keeps the current symbol crumbs for up to 200 ms. A quick response replaces them together without an empty intermediate state; a slower response clears them until the new symbols arrive.
+
 ## Commands
 
 Commands available in `lumine-workspace`:
