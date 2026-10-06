@@ -57,7 +57,7 @@ button.breadcrumbs-crumb:focus {
 
 button.breadcrumbs-crumb:focus-visible {
   color: var(--text-color-highlight);
-  box-shadow: inset 0 -1px 0 var(--accent-color);
+  box-shadow: inset 0 -1px 0 var(--accent-indicator-color);
 }
 
 .breadcrumbs-icon {
