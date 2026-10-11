@@ -32,15 +32,6 @@ describe("breadcrumbs package assets", () => {
     );
   });
 
-  it("defines the symbol navigation scroll zone", () => {
-    const config = JSON.parse(read("package.json")).configSchema.scrollZone;
-    expect(config.type).toBe("array");
-    expect(config.items).toEqual({ type: "integer", minimum: 0, maximum: 100 });
-    expect(config.minItems).toBe(1);
-    expect(config.maxItems).toBe(2);
-    expect(config.default).toEqual([0, 50]);
-  });
-
   it("hides a redundant single project root by default", () => {
     const config = JSON.parse(read("package.json")).configSchema.hideSingleProjectRoot;
     expect(config.type).toBe("boolean");

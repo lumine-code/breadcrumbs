@@ -130,7 +130,7 @@ describe("breadcrumbs", () => {
     lumine.config.set("breadcrumbs.symbolPath", "on");
     lumine.config.set("breadcrumbs.icons", true);
     lumine.config.set("breadcrumbs.hideSingleProjectRoot", true);
-    lumine.config.set("breadcrumbs.scrollZone", [0, 50]);
+    lumine.config.set("editor.scrollZone", [0, 50]);
     pack = await lumine.packages.activatePackage("breadcrumbs");
     main = pack.mainModule;
     defaultFile = path.resolve(__dirname, "..", "package.json");
@@ -306,11 +306,14 @@ describe("breadcrumbs", () => {
     expect(view.element.querySelector("[title], [data-original-title]")).toBeNull();
     expect(lumine.tooltips.findTooltips(symbols[0])).toEqual([]);
 
-    lumine.config.set("breadcrumbs.scrollZone", [25]);
-    const scrollToCursor = spyOn(editor, "scrollToCursorPosition").and.callThrough();
+    lumine.config.set("editor.scrollZone", [25]);
+    const scrollRequests = [];
+    const subscription = editor.onDidRequestAutoscroll((request) => scrollRequests.push(request));
     symbols[0].click();
+    subscription.dispose();
     expect(editor.getCursorBufferPosition().isEqual([0, 0])).toBe(true);
-    expect(scrollToCursor).toHaveBeenCalledWith({ zone: [25] });
+    expect(scrollRequests.length).toBe(1);
+    expect(scrollRequests[0].options.mode).toEqual([25, 25]);
     expect(lumine.views.getView(editor).contains(document.activeElement)).toBe(true);
   });
 
