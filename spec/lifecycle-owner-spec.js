@@ -113,7 +113,7 @@ describe("Breadcrumbs runtime ownership", () => {
     cleanups.push(() => earlier.dispose());
     const controller = main.ensureController();
     armed = true;
-    const pane = lumine.workspace.getActivePane().splitRight({ copyActiveItem: false });
+    const pane = lumine.workspace.getActivePane().splitRight();
     expect(controller.views.has(pane)).toBe(false);
     cleanups.push(() => controller.destroy());
   });
@@ -128,6 +128,7 @@ describe("Breadcrumbs runtime ownership", () => {
     main.controller.addPane(pane);
     const current = main.controller.views.get(pane);
     const item = {
+      isSingleton: () => true,
       element: document.createElement("div"),
       getTitle: () => "Owned surface",
       getPath: () => path.join(directory, "document.txt"),
