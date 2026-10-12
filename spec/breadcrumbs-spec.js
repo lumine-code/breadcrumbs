@@ -29,7 +29,7 @@ function installClock() {
 function makePaneItem(options = {}) {
   const emitter = new Emitter();
   const item = document.createElement("div");
-  item.isSingleton = () => true;
+  item.canCopy = () => false;
   const uri = `breadcrumbs-spec://${++paneItemId}`;
   let title = options.title ?? "Pane Item";
   let filePath = options.filePath;

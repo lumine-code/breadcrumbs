@@ -38,7 +38,7 @@ describe("breadcrumbs bootstrap activation", () => {
   it("initializes its controller for the first pane item, including custom items", async () => {
     const pane = lumine.workspace.getActivePane();
     const nonTextItem = document.createElement("div");
-    nonTextItem.isSingleton = () => true;
+    nonTextItem.canCopy = () => false;
     nonTextItem.getPath = () => path.join(PACKAGE_PATH, "package.json");
     pane.addItem(nonTextItem);
 

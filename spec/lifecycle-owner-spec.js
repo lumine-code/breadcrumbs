@@ -128,7 +128,7 @@ describe("Breadcrumbs runtime ownership", () => {
     main.controller.addPane(pane);
     const current = main.controller.views.get(pane);
     const item = {
-      isSingleton: () => true,
+      canCopy: () => false,
       element: document.createElement("div"),
       getTitle: () => "Owned surface",
       getPath: () => path.join(directory, "document.txt"),
