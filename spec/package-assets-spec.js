@@ -59,7 +59,9 @@ describe("breadcrumbs package assets", () => {
     const menu = JSON.parse(read("menus/main.json"));
     const view = menu.menu.find((item) => item.label === "View");
     const editor = view.submenu.find((item) => item.label === "Editor");
-    expect(editor.submenu).toEqual([{ label: "Breadcrumbs", command: "breadcrumbs:toggle" }]);
+    expect(editor.submenu).toEqual([
+      { label: "Breadcrumbs", command: "breadcrumbs:toggle", group: "structure", order: 10 },
+    ]);
     const packages = menu.menu.find((item) => item.label === "Packages");
     const breadcrumbs = packages.submenu.find((item) => item.label === "Breadcrumbs");
     expect(breadcrumbs.submenu).toEqual([{ label: "Toggle", command: "breadcrumbs:toggle" }]);
