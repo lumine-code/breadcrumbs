@@ -11,6 +11,8 @@ The bar follows the active item in every non-empty center pane when it exposes a
 - **Navigation**: reveal path segments in the tree view and jump to symbols.
 - **Per-pane state**: every split follows its own active pane item.
 
+![Follow the file path and enclosing symbols while editing.](.github/demo.png)
+
 ## Installation
 
 To install `breadcrumbs` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/breadcrumbs`.

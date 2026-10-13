@@ -1,0 +1,16 @@
+{
+  "title": "breadcrumbs",
+  "description": "Follow the file path and enclosing symbols while editing.",
+  "recordedOn": "2026-10-13",
+  "sourceRevision": "4c82bf4acc03b74208df5300848d844da6cef8a6",
+  "mode": "normal",
+  "fontSettings": "default",
+  "images": [
+    {
+      "file": "demo.png",
+      "label": "Follow the file path and enclosing symbols while editing.",
+      "width": 1200,
+      "height": 760
+    }
+  ]
+}
