@@ -57,8 +57,12 @@ describe("breadcrumbs package assets", () => {
 
   it("ships one menu file, one stylesheet, and no keymap", () => {
     const menu = JSON.parse(read("menus/main.json"));
-    expect(menu.menu[0].label).toBe("View");
-    expect(menu.menu[0].submenu[0].command).toBe("breadcrumbs:toggle");
+    const view = menu.menu.find((item) => item.label === "View");
+    const editor = view.submenu.find((item) => item.label === "Editor");
+    expect(editor.submenu).toEqual([{ label: "Breadcrumbs", command: "breadcrumbs:toggle" }]);
+    const packages = menu.menu.find((item) => item.label === "Packages");
+    const breadcrumbs = packages.submenu.find((item) => item.label === "Breadcrumbs");
+    expect(breadcrumbs.submenu).toEqual([{ label: "Toggle", command: "breadcrumbs:toggle" }]);
     expect(fs.existsSync(path.join(root, "styles", "main.css"))).toBe(true);
     expect(fs.existsSync(path.join(root, "keymaps"))).toBe(false);
     expect(read("styles/main.css")).toContain(
