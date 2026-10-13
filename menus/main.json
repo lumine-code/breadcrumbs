@@ -4,8 +4,27 @@
       "label": "View",
       "submenu": [
         {
-          "label": "Toggle Breadcrumbs",
-          "command": "breadcrumbs:toggle"
+          "label": "Editor",
+          "submenu": [
+            {
+              "label": "Breadcrumbs",
+              "command": "breadcrumbs:toggle"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Packages",
+      "submenu": [
+        {
+          "label": "Breadcrumbs",
+          "submenu": [
+            {
+              "label": "Toggle",
+              "command": "breadcrumbs:toggle"
+            }
+          ]
         }
       ]
     }
