@@ -43,5 +43,9 @@ module.exports = [
       "n/no-extraneous-require": "off",
     },
   },
+  {
+    files: ["demo/**/*.js"],
+    languageOptions: { sourceType: "module" },
+  },
   prettier,
 ];
