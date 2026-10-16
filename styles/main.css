@@ -1,7 +1,7 @@
 .breadcrumbs {
   box-sizing: border-box;
   flex: 0 0 auto;
-  min-height: 24px;
+  min-height: 28px;
   overflow-x: auto;
   overflow-y: hidden;
   color: var(--text-color-subtle);
@@ -23,7 +23,7 @@
   align-items: center;
   width: max-content;
   min-width: 100%;
-  height: 23px;
+  height: 27px;
   padding: 0 6px;
   white-space: nowrap;
 }
