@@ -840,7 +840,6 @@ describe("breadcrumbs", () => {
     const clock = installClock();
     try {
       const pending = view.invalidateSymbols();
-      editor.setCursorBufferPosition([7, 0]);
       clock.tick(199);
       expect(view.symbolTree).toBe(tree);
       expect(Array.from(view.element.querySelectorAll(".breadcrumbs-symbol"))).toEqual(symbols);
@@ -865,6 +864,33 @@ describe("breadcrumbs", () => {
     } finally {
       clock.uninstall();
     }
+  });
+
+  it("follows cursor movement between scopes while a replacement request is unresolved", async () => {
+    const registry = makeRegistry();
+    registry.tree[0].range.end.row = 5;
+    registry.tree.push({
+      name: "Second scope",
+      position: new Point(6, 0),
+      range: new Range([6, 0], [9, 0]),
+      children: [],
+    });
+    registryDisposable = main.consumeSymbolRegistry(registry);
+    editor.setCursorBufferPosition([3, 0]);
+    await view.symbolRefresh.promise;
+    let complete;
+    registry.getFileSymbolTree = () => new Promise((resolve) => (complete = resolve));
+    const pending = view.invalidateSymbols();
+    const request = view.symbolRefresh;
+    editor.setCursorBufferPosition([7, 0]);
+    expect(view.symbolContent.textContent).toBe("Second scope");
+    expect(view.symbolRefresh).toBe(request);
+    editor.setCursorBufferPosition([3, 0]);
+    expect(
+      Array.from(view.symbolContent.querySelectorAll("button"), (item) => item.textContent),
+    ).toEqual(["Outer", "inner"]);
+    complete(registry.tree);
+    await pending;
   });
 
   it("reuses unchanged crumbs while updating navigation to the replacement coordinates", async () => {
