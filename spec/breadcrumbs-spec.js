@@ -155,7 +155,15 @@ describe("breadcrumbs", () => {
     await lumine.packages.deactivatePackage("breadcrumbs");
     await lumine.fileWatchClient.settlePendingTeardown();
     if (tempRoot) {
-      fs.rmSync(tempRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+      // Let repository discovery and file-watch teardown finish between
+      // retries; a synchronous retry loop can keep Windows handles alive.
+      await fs.promises.rm(tempRoot, {
+        recursive: true,
+        force: true,
+        maxRetries: 10,
+        retryDelay: 50,
+      });
+      tempRoot = null;
     }
   });
 
