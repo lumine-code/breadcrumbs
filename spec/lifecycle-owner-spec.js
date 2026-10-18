@@ -187,7 +187,7 @@ describe("Breadcrumbs runtime ownership", () => {
     expect(disposals[0]).toHaveBeenCalledTimes(1);
   });
 
-  it("renders the innermost crumb from a valid deeply nested symbol tree", () => {
+  it("renders the innermost crumb from a valid deeply nested symbol tree", async () => {
     lumine.config.set("breadcrumbs.symbolPath", "last");
     editor.setText("x".repeat(12002));
     editor.setCursorBufferPosition([0, 6000]);
@@ -208,6 +208,7 @@ describe("Breadcrumbs runtime ownership", () => {
     }
     const current = view();
     current.setRegistry(registry(tree));
+    await current.refreshSymbols();
     expect(current.element.querySelector(".breadcrumbs-symbol").textContent).toContain(
       "Nested 5999",
     );

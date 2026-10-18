@@ -93,4 +93,26 @@ describe("breadcrumbs real symbol registry integration", () => {
     expect(view.element.querySelector(".breadcrumbs-path")).not.toBeNull();
     expect(view.element.hidden).toBe(false);
   });
+
+  it("uses tracked coordinates in the prepared index while a replacement is pending", async () => {
+    const previousTree = view.symbolTree;
+    let complete;
+    const runtime = lumine.packages.getActivePackage("symbol").mainModule.registry;
+    spyOn(runtime, "getFileSymbolTree").and.callFake(
+      () => new Promise((resolve) => (complete = resolve)),
+    );
+    editor.setCursorBufferPosition([0, 0]);
+    editor.insertText("\n");
+    editor.setCursorBufferPosition([3, 6]);
+    expect(names()).toContain("inner");
+    const pending = view.invalidateSymbols();
+    const inner = Array.from(view.symbolContent.querySelectorAll("button")).find(
+      (button) => button.textContent === "inner",
+    );
+    inner.click();
+    expect(editor.getCursorBufferPosition().isEqual([2, 2])).toBe(true);
+    complete(previousTree);
+    await pending;
+    expect(names()).toContain("inner");
+  });
 });
