@@ -4,6 +4,11 @@ const fs = require("node:fs/promises"),
 const { Emitter, Disposable, Point, Range } = require("lumine");
 
 describe("Breadcrumbs runtime ownership", () => {
+  // Analysis fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let main, editor, directory, hub, consumers, providers, cleanups;
   beforeEach(async () => {
     jasmine.useRealClock();

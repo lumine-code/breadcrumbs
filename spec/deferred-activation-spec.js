@@ -4,6 +4,11 @@ const PACKAGE_NAME = "breadcrumbs";
 const PACKAGE_PATH = path.join(__dirname, "..");
 
 describe("breadcrumbs bootstrap activation", () => {
+  // Analysis fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let pack;
   let workspaceElement;
 

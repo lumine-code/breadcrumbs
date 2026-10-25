@@ -11,6 +11,8 @@ describe("breadcrumbs real symbol registry integration", () => {
   let registry;
 
   beforeEach(async () => {
+    const textGrammarPackage = await lumine.packages.activatePackage("language-text");
+    await textGrammarPackage.resourceLoadPromise;
     jasmine.useRealClock();
     jasmine.attachToDOM(lumine.views.getView(lumine.workspace));
     for (const name of ["language-javascript", "symbol", "symbol-tree-sitter"]) {
