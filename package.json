@@ -17,6 +17,7 @@
   "license": "MIT",
   "main": "./lib/main",
   "files": [
+    "docs",
     "lib",
     "menus",
     "spec",
@@ -95,6 +96,11 @@
     }
   },
   "providedServices": {
+    "breadcrumbs.actions": {
+      "versions": {
+        "1.0.0": "provideBreadcrumbsActions"
+      }
+    },
     "background-tips.provider": {
       "versions": {
         "1.0.0": "provideBackgroundTips"
