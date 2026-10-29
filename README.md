@@ -10,7 +10,6 @@ The bar follows the active item in every non-empty center pane when it exposes a
 - **Symbol path**: follow nested symbols from the shared symbol registry in text editors.
 - **Navigation**: reveal path segments in the tree view and jump to symbols.
 - **Per-pane state**: every split follows its own active pane item.
-- **Document actions**: keep package-provided action buttons beside the breadcrumb path.
 
 ![Follow the file path and enclosing symbols while editing.](.github/demo.png)
 
@@ -29,31 +28,6 @@ Refreshing symbols after edits or saves keeps the current symbol crumbs for up t
 Commands available in `lumine-workspace`:
 
 - `breadcrumbs:toggle`: show or hide breadcrumbs.
-
-## Usage
-
-Actions remain at the right edge while long paths scroll. Each action belongs to the document shown in its own pane, including when another split has focus. Available actions can show for pathless items even when their breadcrumb paths are hidden. Turning breadcrumbs off hides the entire bar, including actions.
-
-## Customization
-
-Adjust the bar and action buttons in your `styles.css`:
-
-```css
-.breadcrumbs {
-  color: var(--text-color);
-}
-
-.breadcrumbs-action {
-  border-radius: 6px;
-}
-```
-
-## Services
-
-- [`breadcrumbs.actions`](docs/breadcrumbs.actions.md): provided to register document actions beside every pane's breadcrumb path.
-- `background-tips.provider`: provided to show navigation tips in an empty workspace.
-- `symbol.registry`: consumed to follow the current text-editor symbol path.
-- `tree-view.selection`: consumed to reveal file paths in the tree view.
 
 ## Contributing
 
