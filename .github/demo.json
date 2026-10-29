@@ -1,9 +1,9 @@
 {
   "title": "breadcrumbs",
   "description": "Follow the file path and enclosing symbols while editing.",
-  "recordedOn": "2026-10-16",
-  "sourceRevision": "cfcc91578498a30358709491765f6b0fd43b6d13",
-  "themeSourceRevision": "828c35ac1816466699effa6f7cf7eedccc930ff9",
+  "recordedOn": "2026-10-29",
+  "sourceRevision": "59a54f4b09c9eb07e377c21e1b2180a9eb787cb8",
+  "themeSourceRevision": "543b6786cc6eed20334c381eb322fc06e00a67b0",
   "mode": "normal",
   "fontSettings": "default",
   "scenario": "demo.js",
@@ -11,8 +11,8 @@
   "environment": {
     "platform": "win32",
     "arch": "x64",
-    "electron": "44.7.1",
-    "chrome": "152.0.7977.149",
+    "electron": "45.0.0",
+    "chrome": "156.0.8078.48",
     "devicePixelRatio": 1,
     "locale": "en-GB",
     "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
@@ -24,42 +24,42 @@
   "privacy": { "version": 1, "location": "neutral", "textChecked": true },
   "sources": {
     "editor": {
-      "revision": "5f709d9b1d54e006d618cc8a5c617c3b02fd418f",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "939ed09965c1cc395817f102bc726e8a6f93f14d",
+      "dirty": true,
+      "workingTreeHash": "e0ef1246d4292269391981239d75dedda270c5f3995da64878fb5ddcb124bfb9"
     },
     "package": {
-      "revision": "cfcc91578498a30358709491765f6b0fd43b6d13",
+      "revision": "59a54f4b09c9eb07e377c21e1b2180a9eb787cb8",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "breadcrumbs": {
-      "revision": "cfcc91578498a30358709491765f6b0fd43b6d13",
+      "revision": "59a54f4b09c9eb07e377c21e1b2180a9eb787cb8",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "language-javascript": {
-      "revision": "5d5b0f3cba44881fba4d6fe1efa02ab3903089b6",
+      "revision": "bf635d04bbf9cf42239552df5455644c59b64b06",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "one-theme": {
-      "revision": "828c35ac1816466699effa6f7cf7eedccc930ff9",
+      "revision": "543b6786cc6eed20334c381eb322fc06e00a67b0",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "symbol": {
-      "revision": "d36d05700ad80ef1450f461ec7f207e41ffab368",
+      "revision": "a0bdee10c92ec46e9a5958c232b0caad1f24e67d",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "symbol-tree-sitter": {
-      "revision": "54f7553e491811ce85dfb74cf61d2ca4d7c29b64",
+      "revision": "368c44732334783ea790afbcc88a59b66936f289",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "tree-view": {
-      "revision": "c94a3fd6465481fc2a2ec090ced0c60fe46018f2",
+      "revision": "968cf8e9ddd41efecb09474c0a108d476f7ae33e",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     }
@@ -92,7 +92,7 @@
       "label": "Follow the file path and enclosing symbols while editing.",
       "width": 1200,
       "height": 760,
-      "sha256": "08200fdcab26b5dde871fefd2b6c9ef514801dfec038c002160011ed7e6b21a6"
+      "sha256": "17d026d9b0d118afe9fbcbcb9f816e07ca91094ebfa3f9daa79ebb0c70182ee6"
     }
   ]
 }
