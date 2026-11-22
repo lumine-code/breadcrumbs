@@ -98,10 +98,11 @@ describe("breadcrumbs real symbol registry integration", () => {
 
   it("uses tracked coordinates in the prepared index while a replacement is pending", async () => {
     const previousTree = view.symbolTree;
-    let complete;
+    const completions = [];
     const runtime = lumine.packages.getActivePackage("symbol").mainModule.registry;
-    spyOn(runtime, "getFileSymbolTree").and.callFake(
-      () => new Promise((resolve) => (complete = resolve)),
+    const pathLookup = typeof runtime.getFileSymbolPath === "function";
+    spyOn(runtime, pathLookup ? "getFileSymbolPath" : "getFileSymbolTree").and.callFake(
+      () => new Promise((resolve) => completions.push(resolve)),
     );
     editor.setCursorBufferPosition([0, 0]);
     editor.insertText("\n");
@@ -113,8 +114,11 @@ describe("breadcrumbs real symbol registry integration", () => {
     );
     inner.click();
     expect(editor.getCursorBufferPosition().isEqual([2, 2])).toBe(true);
-    complete(previousTree);
+    const latest = view.refreshSymbols();
+    for (const complete of completions)
+      complete(pathLookup ? { tree: previousTree } : previousTree);
     await pending;
+    await latest;
     expect(names()).toContain("inner");
   });
 });

@@ -90,6 +90,28 @@ describe("Breadcrumbs runtime ownership", () => {
     expect(main.registry).not.toBe(value);
   });
 
+  it("retargets a local symbol request when the cursor moves", async () => {
+    consume("symbol.registry", "^1.1.0", "consumeSymbolRegistry");
+    const value = registry(null);
+    const pending = [];
+    value.getFileSymbolPath = (_editor, position, { signal }) =>
+      new Promise((resolve) => pending.push({ position, signal, resolve }));
+    spyOn(value, "getFileSymbolTree").and.callThrough();
+    provide("symbol.registry", "1.2.0", value);
+    const initial = view().refreshSymbols();
+    expect(pending.length).toBe(1);
+    editor.setCursorBufferPosition([0, 4]);
+    const latest = view().refreshSymbols();
+    expect(pending[0].signal.aborted).toBeTrue();
+    expect(pending[1].position.isEqual([0, 4])).toBeTrue();
+    pending[1].resolve({ path: [{ name: "Current", position: new Point(0, 4) }] });
+    await latest;
+    pending[0].resolve({ path: [{ name: "Obsolete", position: new Point(0, 0) }] });
+    await initial;
+    expect(value.getFileSymbolTree).not.toHaveBeenCalled();
+    expect(view().element.querySelector(".breadcrumbs-symbol").textContent).toBe("Current");
+  });
+
   it("keeps a shared tree selector and its real clickable file crumb", async () => {
     consume("tree-view.selection", "^1.0.0", "consumeTreeViewSelection");
     const value = { revealPath: jasmine.createSpy("reveal owned path").and.resolveTo() };
